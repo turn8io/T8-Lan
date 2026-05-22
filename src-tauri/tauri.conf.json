@@ -1,0 +1,63 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "T8-Lan",
+  "version": "0.1.0",
+  "identifier": "io.turn8.t8lan",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "devUrl": "http://localhost:1420",
+    "beforeBuildCommand": "npm run build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "withGlobalTauri": false,
+    "windows": [
+      {
+        "label": "main",
+        "title": "T8-Lan",
+        "width": 220,
+        "height": 300,
+        "minWidth": 220,
+        "minHeight": 300,
+        "resizable": false,
+        "minimizable": false,
+        "maximizable": false,
+        "decorations": false,
+        "transparent": true,
+        "shadow": true,
+        "visible": false,
+        "skipTaskbar": true,
+        "center": false,
+        "alwaysOnTop": false,
+        "focus": true
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["nsis"],
+    "icon": ["icons/icon.ico"],
+    "publisher": "Turn8",
+    "homepage": "https://www.turn8.io",
+    "copyright": "© 2026 Turn8",
+    "category": "Utility",
+    "shortDescription": "Snel schakelen tussen statisch IP en DHCP",
+    "longDescription": "T8-Lan laat monteurs vanuit het system tray razendsnel schakelen tussen een statisch IP en DHCP op een gekozen netwerkadapter. Linker klik opent instellingen; rechter klik toont de 5 laatst gebruikte IPs. Door Turn8 — improving saves time.",
+    "windows": {
+      "webviewInstallMode": {
+        "type": "downloadBootstrapper"
+      },
+      "nsis": {
+        "installMode": "perMachine",
+        "installerIcon": "icons/icon.ico",
+        "installerHooks": "installer/installer-hooks.nsh",
+        "template": "installer/installer.nsi",
+        "languages": ["English", "Dutch"],
+        "displayLanguageSelector": false
+      }
+    }
+  }
+}

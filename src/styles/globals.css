@@ -1,0 +1,1499 @@
+/* ============================================================
+   T8-Lan — compacte design tokens (venster 248x340)
+   ============================================================ */
+
+:root {
+  --t8-yellow: #ecc209;
+  --t8-yellow-soft: #ffd84d;
+  --t8-amber: #ff8c00;
+
+  --bg-app: rgba(15, 15, 18, 0.74);
+  --bg-elev: rgba(28, 28, 34, 0.55);
+  --bg-card: rgba(255, 255, 255, 0.04);
+  --bg-input: rgba(255, 255, 255, 0.06);
+  --bg-input-focus: rgba(255, 255, 255, 0.1);
+
+  --fg: #f3f3f5;
+  --fg-muted: rgba(243, 243, 245, 0.62);
+  --fg-faint: rgba(243, 243, 245, 0.4);
+
+  --border: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.16);
+
+  --ok: #4ade80;
+  --warn: #f59e0b;
+  --err: #ef4444;
+
+  --ease: cubic-bezier(0.4, 0, 0.2, 1);
+  --dur-fast: 130ms;
+  --dur-tab: 170ms;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background: transparent;
+  color: var(--fg);
+  font-family: "Segoe UI Variable", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-size: 12px;
+  line-height: 1.35;
+  font-weight: 400;
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+.mono {
+  font-family: "Cascadia Code", "Consolas", monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ============================================================
+   App shell + strakke 3D-rand
+   ============================================================ */
+
+/* Het 1px-randje is een verticaal verloop: lichte bovenrand → donkere onderrand,
+   wat een subtiel opgetild (3D) randeffect geeft. De matzwarte shell ligt er met
+   1px inset overheen, zodat alleen dat dunne randje zichtbaar is. */
+.app {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  padding: 1px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.22) 0%,
+    rgba(255, 255, 255, 0.06) 16%,
+    rgba(0, 0, 0, 0.38) 100%
+  );
+}
+
+.shell {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(180deg, #0a0a0c 0%, #17171d 100%);
+  border-radius: 7px;
+  overflow: hidden;
+  /* fijne lichtlijn aan de bovenkant versterkt het 3D-effect */
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  animation: shell-in 200ms var(--ease) both;
+}
+
+@keyframes shell-in {
+  from {
+    transform: scale(0.96);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* ============================================================
+   Titlebar (compact, 30px)
+   ============================================================ */
+
+.titlebar {
+  height: 30px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 2px 0 8px;
+  background: #0a0a0c;
+  position: relative;
+  z-index: 2;
+}
+
+/* De dim gele headerlijn (vaste "rail"). */
+.titlebar::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 1px;
+  background: rgba(236, 194, 9, 0.28);
+  pointer-events: none;
+}
+
+/* Knight Rider: een gele lichtveeg die door het midden van die lijn heen en weer scant. */
+.titlebar::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 1px;
+  width: 9.5%;
+  border-radius: 1px;
+  background: linear-gradient(90deg, transparent, var(--t8-yellow) 50%, transparent);
+  filter: drop-shadow(0 0 2px var(--t8-yellow));
+  animation: kitt-scan 3.4s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+
+@keyframes kitt-scan {
+  from {
+    transform: translateX(0%);
+  }
+  to {
+    transform: translateX(953%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .titlebar::after {
+    animation: none;
+    left: 45%;
+  }
+  .shell {
+    animation: none;
+  }
+}
+
+.titlebar__brand {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 100%;
+  flex: 1;
+}
+
+.titlebar__logo {
+  height: 15px;
+  width: auto;
+  filter: drop-shadow(0 0 3px rgba(236, 194, 9, 0.4));
+}
+
+.titlebar__title {
+  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.titlebar__actions {
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  flex-shrink: 0;
+}
+
+.titlebar__btn {
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--fg-muted);
+  border-radius: 4px;
+  transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
+}
+
+.titlebar__btn svg {
+  display: block;
+}
+
+.titlebar__btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--fg);
+}
+.titlebar__btn:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+.titlebar__btn--close:hover:not(:disabled) {
+  background: var(--err);
+  color: white;
+}
+
+/* ============================================================
+   Icon tabs + smart tooltip
+   ============================================================ */
+
+.tabs {
+  display: flex;
+  flex-shrink: 0;
+  padding: 2px 4px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-elev);
+  position: relative;
+}
+
+.tab {
+  flex: 1;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--fg-muted);
+  border-radius: 5px;
+  position: relative;
+  transition: color var(--dur-fast) var(--ease), background var(--dur-fast) var(--ease);
+}
+
+.tab:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--fg);
+}
+
+.tab[data-active="true"] {
+  color: var(--t8-yellow);
+  background: rgba(236, 194, 9, 0.1);
+}
+
+.tab[data-active="true"]::after {
+  content: "";
+  position: absolute;
+  left: 25%;
+  right: 25%;
+  bottom: -4px;
+  height: 2px;
+  background: var(--t8-yellow);
+  border-radius: 2px 2px 0 0;
+  box-shadow: 0 0 6px var(--t8-yellow);
+}
+
+.tab__icon {
+  display: inline-flex;
+  position: relative;
+  z-index: 1;
+}
+
+/* DNS health bar — same design as the active-tab underline, green/red,
+   always shown under the DNS tab. */
+.tab__bar {
+  position: absolute;
+  left: 25%;
+  right: 25%;
+  bottom: -4px;
+  height: 2px;
+  border-radius: 2px 2px 0 0;
+  pointer-events: none;
+}
+.tab__bar--ok {
+  background: var(--ok);
+  box-shadow: 0 0 6px var(--ok);
+}
+.tab__bar--err {
+  background: var(--err);
+  box-shadow: 0 0 6px var(--err);
+}
+/* when the DNS tab is active, show the health colour (not the yellow) */
+.tab[data-active="true"]:has(.tab__bar)::after {
+  display: none;
+}
+
+/* DNS health dot (top-right of the DNS tab) */
+.tab__dot {
+  position: absolute;
+  top: 2px;
+  right: 4px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+}
+.tab__dot--ok {
+  background: var(--ok);
+  box-shadow: 0 0 4px var(--ok);
+}
+.tab__dot--err {
+  background: var(--err);
+  box-shadow: 0 0 4px var(--err);
+}
+
+/* inline variant inside the DNS tab health row */
+.dns-health__dot {
+  position: static;
+  display: inline-block;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+.dns-health__rtt {
+  font-size: 12px;
+  color: var(--fg);
+}
+
+/* DNS tile: 2-col grid → preset dropdown + both DNS fields are equally wide. */
+.dns-grid {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 6px 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 7px 8px;
+}
+.dns-toggle-cell {
+  justify-self: end;
+  display: inline-flex;
+}
+.dns-server-input {
+  min-width: 0;
+  text-align: right;
+}
+
+/* ============================================================
+   Unified tooltip (huisstijl) — gebruikt door tabs, titlebar,
+   copy-knop, etc. via <Tooltip> / <CopyButton> / Tabs.
+   ============================================================ */
+
+.tt-wrap {
+  position: relative;
+  display: inline-flex;
+}
+
+.tooltip {
+  position: absolute;
+  z-index: 60;
+  background: #000;
+  color: var(--fg);
+  font-size: 10px;
+  font-weight: 500;
+  padding: 3px 7px;
+  border-radius: 4px;
+  white-space: nowrap;
+  pointer-events: none;
+  border: 1px solid var(--border-strong);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+  animation: tip-in 90ms var(--ease);
+}
+
+.tooltip--bottom {
+  top: calc(100% + 5px);
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.tooltip--top {
+  bottom: calc(100% + 5px);
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.tooltip--left {
+  right: calc(100% + 6px);
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+@keyframes tip-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* ============================================================
+   Tab stage + slide transitions
+   ============================================================ */
+
+.tab-stage {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+}
+
+.tab-panel {
+  position: absolute;
+  inset: 0;
+  padding: 10px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  animation: tab-in var(--dur-tab) var(--ease) both;
+}
+
+.tab-stage[data-direction="forward"] .tab-panel {
+  animation-name: tab-slide-r;
+}
+.tab-stage[data-direction="back"] .tab-panel {
+  animation-name: tab-slide-l;
+}
+
+@keyframes tab-slide-r {
+  from {
+    transform: translateX(10px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+@keyframes tab-slide-l {
+  from {
+    transform: translateX(-10px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+@keyframes tab-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.tab-panel::-webkit-scrollbar {
+  width: 5px;
+}
+.tab-panel::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 3px;
+}
+
+/* ============================================================
+   Tab content
+   ============================================================ */
+
+.tab-content {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.tab-title {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+}
+
+.hint {
+  margin: 0;
+  font-size: 10px;
+  color: var(--fg-faint);
+  line-height: 1.45;
+}
+
+/* ============================================================
+   Form primitives (compact)
+   ============================================================ */
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.field__label {
+  font-size: 9.5px;
+  font-weight: 600;
+  color: var(--fg-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.input,
+.select {
+  background: var(--bg-input);
+  color: var(--fg);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 5px 8px;
+  font-size: 11px;
+  outline: none;
+  width: 100%;
+  transition: background var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease),
+    box-shadow var(--dur-fast) var(--ease);
+}
+
+.input:focus,
+.select:focus {
+  background: var(--bg-input-focus);
+  border-color: var(--t8-yellow);
+  box-shadow: 0 0 0 2px rgba(236, 194, 9, 0.2);
+}
+
+.input:disabled,
+.select:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.select {
+  appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, var(--fg-muted) 50%),
+    linear-gradient(135deg, var(--fg-muted) 50%, transparent 50%);
+  background-position: calc(100% - 12px) 50%, calc(100% - 8px) 50%;
+  background-size: 4px 4px;
+  background-repeat: no-repeat;
+  padding-right: 22px;
+}
+
+.row {
+  display: flex;
+  gap: 6px;
+  align-items: stretch;
+}
+.row > .input {
+  flex: 1;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 5px 10px;
+  border-radius: 5px;
+  font-weight: 600;
+  font-size: 11px;
+  border: 1px solid transparent;
+  white-space: nowrap;
+  transition: transform var(--dur-fast) var(--ease), background var(--dur-fast) var(--ease),
+    border-color var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn--primary {
+  background: var(--t8-yellow);
+  color: #1a1a1a;
+}
+.btn--primary:hover:not(:disabled) {
+  background: var(--t8-yellow-soft);
+  box-shadow: 0 0 12px rgba(236, 194, 9, 0.5);
+}
+.btn--primary:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.btn--ghost {
+  background: var(--bg-card);
+  border-color: var(--border);
+  color: var(--fg);
+}
+.btn--ghost:hover:not(:disabled) {
+  background: var(--bg-input-focus);
+  border-color: var(--border-strong);
+}
+
+.btn--full {
+  width: 100%;
+}
+
+/* zelfde hoogte als het CARD-invoerveld (Select met 2px verticale padding) */
+.btn--compact {
+  padding-top: 2px;
+  padding-bottom: 2px;
+}
+
+/* ============================================================
+   Toggle (schuivend rondje in ovaal)
+   ============================================================ */
+
+.toggle {
+  position: relative;
+  width: 38px;
+  height: 20px;
+  flex-shrink: 0;
+  border-radius: 999px;
+}
+
+.toggle__track {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  background: var(--bg-input);
+  border: 1px solid var(--border-strong);
+  transition: background var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease);
+}
+
+.toggle__dot {
+  position: absolute;
+  top: 50%;
+  left: 3px;
+  width: 14px;
+  height: 14px;
+  margin-top: -7px;
+  border-radius: 50%;
+  background: var(--fg-muted);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+  transition: transform var(--dur-fast) var(--ease), background var(--dur-fast) var(--ease);
+}
+
+.toggle[data-on="true"] .toggle__track {
+  background: var(--t8-yellow);
+  border-color: var(--t8-yellow);
+  box-shadow: 0 0 10px rgba(236, 194, 9, 0.45);
+}
+
+.toggle[data-on="true"] .toggle__dot {
+  transform: translateX(18px);
+  background: #1a1a1a;
+}
+
+/* ============================================================
+   Custom Select (dark dropdown, fixed-positioned menu)
+   ============================================================ */
+
+.cselect {
+  position: relative;
+  width: 100%;
+}
+
+.cselect__btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  background: var(--bg-input);
+  color: var(--fg);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 5px 8px;
+  font-size: 11px;
+  transition: background var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease);
+}
+
+.cselect__btn:hover:not(:disabled) {
+  background: var(--bg-input-focus);
+}
+
+.cselect__btn[data-open="true"] {
+  border-color: var(--t8-yellow);
+  box-shadow: 0 0 0 2px rgba(236, 194, 9, 0.2);
+}
+
+.cselect__btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.cselect__label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cselect__menu {
+  list-style: none;
+  margin: 0;
+  padding: 3px;
+  background: #1b1b20;
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6);
+  z-index: 100;
+  overflow-y: auto;
+  animation: tip-in 90ms var(--ease);
+}
+
+.cselect__opt {
+  width: 100%;
+  text-align: left;
+  padding: 5px 8px;
+  font-size: 11px;
+  border-radius: 4px;
+  color: var(--fg);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: background var(--dur-fast) var(--ease);
+}
+
+.cselect__opt:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.cselect__opt[data-active="true"] {
+  color: var(--t8-yellow);
+  background: rgba(236, 194, 9, 0.12);
+}
+
+/* ============================================================
+   IP combobox (input + recents dropdown + apply checkmark)
+   ============================================================ */
+
+.ipcombo {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  gap: 4px;
+}
+
+.ipcombo__field {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+}
+
+.ipcombo__input {
+  width: 100%;
+  padding-right: 22px;
+}
+
+.ipcombo__chevron {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: var(--fg-muted);
+  cursor: pointer;
+  transition: color var(--dur-fast) var(--ease);
+}
+
+.ipcombo__chevron:hover:not(:disabled) {
+  color: var(--fg);
+}
+
+.ipcombo__chevron:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.ipcombo__menu {
+  list-style: none;
+  margin: 0;
+  padding: 3px;
+  background: #1b1b20;
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6);
+  z-index: 100;
+  overflow-y: auto;
+  animation: tip-in 90ms var(--ease);
+}
+
+.ipcombo__row {
+  display: flex;
+  align-items: stretch;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.ipcombo__row:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.ipcombo__pick {
+  flex: 1;
+  text-align: left;
+  padding: 5px 8px;
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--fg);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.ipcombo__label {
+  color: var(--fg-muted);
+  font-style: italic;
+  font-size: 10px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ipcombo__edit {
+  flex: 1;
+  background: var(--bg-input-focus);
+  border: 1px solid var(--t8-yellow);
+  border-radius: 3px;
+  padding: 2px 6px;
+  margin: 2px;
+  color: var(--fg);
+  font-size: 10px;
+  outline: none;
+  min-width: 0;
+}
+
+.ipcombo__icon {
+  width: 22px;
+  color: var(--fg-faint);
+  font-size: 13px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
+}
+
+.ipcombo__icon:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--t8-yellow);
+}
+
+.ipcombo__icon--del:hover {
+  background: rgba(239, 68, 68, 0.15);
+  color: var(--err);
+}
+
+/* ============================================================
+   In-app flash bar (vervangt switch-toast)
+   ============================================================ */
+
+.flashbar {
+  flex-shrink: 0;
+  padding: 5px 10px;
+  font-size: 11px;
+  text-align: center;
+  border-top: 1px solid var(--border);
+  animation: tip-in 140ms var(--ease);
+}
+
+.flashbar--ok {
+  background: rgba(74, 222, 128, 0.14);
+  color: var(--ok);
+}
+
+.flashbar--err {
+  background: rgba(239, 68, 68, 0.14);
+  color: var(--err);
+}
+
+.flashbar--warn {
+  background: rgba(245, 158, 11, 0.14);
+  color: var(--warn);
+}
+
+.toggle:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ============================================================
+   Status card + stats
+   ============================================================ */
+
+.status-card {
+  position: relative;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 7px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* fading content wrapper: out in 0.5s while switching, in 0.2s when done */
+.status-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  transition: opacity 0.2s var(--ease);
+}
+.status-card__body.is-fading {
+  opacity: 0;
+  transition: opacity 0.5s var(--ease);
+  pointer-events: none;
+}
+
+/* loading ring centered in the IP tile while a switch is applied */
+.card-spinner {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid rgba(236, 194, 9, 0.25);
+  border-top-color: var(--t8-yellow);
+  animation: card-spin 0.7s linear infinite;
+  z-index: 2;
+}
+@keyframes card-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.status-card--ok {
+  animation: card-pulse-ok 1.3s var(--ease);
+}
+
+.status-card--err {
+  animation: card-pulse-err 1.3s var(--ease);
+}
+
+@keyframes card-pulse-ok {
+  0% {
+    border-color: var(--ok);
+    background: rgba(74, 222, 128, 0.18);
+    box-shadow: 0 0 14px rgba(74, 222, 128, 0.45);
+  }
+  100% {
+    border-color: var(--border);
+    background: var(--bg-card);
+    box-shadow: none;
+  }
+}
+
+@keyframes card-pulse-err {
+  0% {
+    border-color: var(--err);
+    background: rgba(239, 68, 68, 0.18);
+    box-shadow: 0 0 14px rgba(239, 68, 68, 0.45);
+  }
+  100% {
+    border-color: var(--border);
+    background: var(--bg-card);
+    box-shadow: none;
+  }
+}
+
+/* label-left / control-right tile (network adapter) */
+.tile {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 8px;
+}
+.tile__label {
+  font-size: 10px;
+  color: var(--fg-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  flex-shrink: 0;
+}
+.tile__control {
+  flex: none;
+  width: 78%;
+  min-width: 0;
+}
+/* shorter controls in the adapter tiles (20% less tall, same font size) */
+.tile__control .cselect__btn,
+.tile__control .ipcombo__input {
+  padding-top: 2px;
+  padding-bottom: 2px;
+}
+
+.status-line__key {
+  flex-shrink: 0;
+  font-size: 10px;
+  font-weight: 300;
+  color: var(--fg-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+/* gateway label + up/down toggle */
+.gw-keyline {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  flex-shrink: 0;
+}
+
+/* inline-editable value (subnet / gateway): looks like text, click to edit */
+.status-edit-val {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  text-align: right;
+  white-space: nowrap;
+  font-size: 12px;
+  font-weight: 300;
+  color: var(--fg);
+  padding: 2px 0;
+  border-radius: 4px;
+  border: none;
+  background: transparent;
+  transition: background var(--dur-fast) var(--ease);
+}
+.status-edit-val:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+.status-edit-val--edit {
+  cursor: text;
+}
+.status-edit-val--copy {
+  cursor: pointer;
+}
+.status-edit-val:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+.status-edit {
+  flex: 1;
+  min-width: 0;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--fg);
+  padding: 2px 4px;
+  border-radius: 4px;
+  border: 1px solid var(--t8-yellow);
+  background: var(--bg-input);
+  text-align: right;
+}
+.status-edit:focus {
+  outline: none;
+}
+.gw-arrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--t8-yellow);
+  cursor: pointer;
+  transition: opacity var(--dur-fast) var(--ease);
+}
+.gw-arrow:hover:not(:disabled) {
+  opacity: 0.7;
+}
+.gw-arrow:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  color: var(--fg-faint);
+}
+
+.status-card__row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+}
+/* second column (the value) always right-aligns to the card edge */
+.status-card__row > :last-child {
+  min-width: 0;
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* combobox preset divider */
+.ipcombo__divider {
+  height: 1px;
+  background: var(--border-strong);
+  margin: 3px 4px;
+}
+
+.sparkline {
+  height: 48px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  text-align: center;
+}
+
+/* ping value in the stats tile */
+.ping-stat-val {
+  font-size: 12px;
+  color: var(--t8-yellow);
+}
+
+/* newest ping point: a small glowing dot that pulses to show it's running */
+.spark-dot--live {
+  animation: spark-glow 1s ease-in-out infinite;
+}
+@keyframes spark-glow {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 0.5px var(--t8-yellow));
+  }
+  50% {
+    filter: drop-shadow(0 0 3px var(--t8-yellow));
+  }
+}
+
+/* ============================================================
+   Inline status, chips, recents
+   ============================================================ */
+
+.input--invalid {
+  border-color: var(--err) !important;
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2) !important;
+}
+
+/* ============================================================
+   Netwerkscan — apparatenlijst
+   ============================================================ */
+
+/* Dekkende balk die de scan-knop bovenaan vasthoudt terwijl de lijst scrollt (in
+   .tab-panel). Loopt tot de panelranden; het ::before dekt de paneel-padding bóven de
+   balk af, zodat er geen zoekresultaten half boven de knop verschijnen. */
+.network-scan-bar {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  margin: 0 -10px;
+  padding: 0 10px 4px;
+  background: #0f0f12;
+}
+.network-scan-bar::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 100%;
+  height: 14px;
+  background: #0f0f12;
+}
+
+/* Knoptekst vet, in dezelfde uppercase/letter-spacing als de veld-labels. */
+.network-scan-btn {
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  font-size: 10px;
+  font-weight: 700;
+}
+/* Geen "wegschietende" knop bij klikken (de primaire knop verschuift normaal 1px). */
+.network-scan-btn:active:not(:disabled) {
+  transform: none;
+}
+
+/* Geen eigen scrollbar: de hele tab scrollt al via .tab-panel. */
+.device-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Rij i.p.v. tegel: IP boven, merk/type eronder; rijen gescheiden door een dunne lijn. */
+.device-row {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  padding: 1px 2px;
+  border-bottom: 1px solid var(--border);
+  line-height: 1.1;
+  transition: background var(--dur-fast) var(--ease);
+}
+.device-row:last-child {
+  border-bottom: none;
+}
+
+.device-row--link {
+  cursor: pointer;
+}
+.device-row:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.device-row__main {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.device-ip {
+  font-family: "Cascadia Code", "Consolas", monospace;
+  font-size: 11px;
+  color: var(--fg);
+}
+
+/* Geel webicoon achter het IP als er een webinterface draait (tekst blijft wit). */
+.device-web {
+  display: inline-flex;
+  align-items: center;
+  color: var(--t8-yellow);
+}
+
+.device-brand {
+  font-size: 9.5px;
+  font-weight: 600;
+  color: var(--fg-muted);
+}
+
+/* Derde regel, bv. de paneelnaam van een alarmsysteem. */
+.device-detail {
+  font-size: 9.5px;
+  color: var(--fg-faint);
+}
+
+/* Actieknoppen (ping + kopieer) gegroepeerd, rechts uitgelijnd. */
+.device-row__main .tt-wrap {
+  margin-left: auto;
+}
+.device-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: auto;
+}
+.device-actions .tt-wrap {
+  margin-left: 0;
+}
+.device-copy {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 20px;
+  color: var(--t8-yellow);
+  opacity: 0;
+  border-radius: 4px;
+  transition: opacity var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease),
+    background var(--dur-fast) var(--ease);
+}
+.device-row:hover .device-copy {
+  opacity: 1;
+}
+.device-copy:hover {
+  color: var(--t8-yellow-soft);
+  background: rgba(236, 194, 9, 0.15);
+}
+/* het ping-icoon is altijd zichtbaar (primaire actie, net als de wereldbol) */
+.device-ping {
+  opacity: 1;
+}
+
+/* delete button used by SSID rule cards */
+.recent-item__close {
+  width: 24px;
+  color: var(--fg-faint);
+  font-size: 15px;
+  line-height: 1;
+  transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
+}
+.recent-item__close:hover {
+  background: rgba(239, 68, 68, 0.15);
+  color: var(--err);
+}
+
+/* ============================================================
+   Hotkey assignment
+   ============================================================ */
+
+.hk-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.hk-row[data-disabled="true"] {
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+.hotkey-input {
+  min-width: 96px;
+  text-align: center;
+  font-family: "Cascadia Code", "Consolas", monospace;
+  font-size: 10px;
+  padding: 4px 8px;
+  border-radius: 5px;
+  background: var(--bg-input);
+  border: 1px solid var(--border-strong);
+  color: var(--fg);
+  transition: border-color var(--dur-fast) var(--ease), background var(--dur-fast) var(--ease);
+}
+
+.hotkey-input:hover {
+  background: var(--bg-input-focus);
+}
+
+.hotkey-input[data-capturing="true"] {
+  border-color: var(--t8-yellow);
+  box-shadow: 0 0 0 2px rgba(236, 194, 9, 0.25);
+  color: var(--t8-yellow);
+}
+
+/* ============================================================
+   SSID rules editor
+   ============================================================ */
+
+.ssid-list {
+  list-style: none;
+  margin: 0 0 5px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.ssid-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 7px 8px;
+}
+
+.ssid-card__top {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ssid-card__ssid {
+  flex: 1;
+  min-width: 0;
+}
+
+.ssid-card__action {
+  width: 72px;
+  flex-shrink: 0;
+}
+
+.ssid-card__ip {
+  width: 100%;
+}
+
+.ssid-card__del {
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+
+/* ============================================================
+   About tab
+   ============================================================ */
+
+.about {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 5px;
+  padding-top: 6px;
+  min-height: 100%;
+}
+
+.about__logo-btn {
+  display: inline-flex;
+  cursor: pointer;
+  transition: transform var(--dur-fast) var(--ease), filter var(--dur-fast) var(--ease);
+}
+.about__logo-btn:hover {
+  transform: scale(1.03);
+}
+
+.about__logo {
+  width: 130px;
+  height: auto;
+  filter: drop-shadow(0 0 14px rgba(236, 194, 9, 0.3));
+}
+.about__logo-btn:hover .about__logo {
+  filter: drop-shadow(0 0 18px rgba(236, 194, 9, 0.55));
+}
+
+.about__slogan {
+  font-size: 11px;
+  font-style: italic;
+  color: var(--t8-yellow);
+  margin: 0 0 4px;
+}
+
+.about__divider {
+  width: 55%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--border-strong), transparent);
+  margin: 4px 0;
+}
+
+.about__line {
+  margin: 0;
+  font-size: 11px;
+}
+
+.about__muted {
+  color: var(--fg-muted);
+}
+
+.about__links {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 5px;
+}
+
+.about__footer {
+  margin-top: 8px;
+  font-size: 9px;
+}
+
+/* Online toolbox — vastgezet onderaan de Over-tab */
+.about__toolbox {
+  margin-top: auto;
+  padding-top: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+}
+.about__toolbox .about__muted {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.link {
+  color: var(--t8-yellow);
+  font-size: 11px;
+  padding: 3px 6px;
+  border-radius: 4px;
+  transition: background var(--dur-fast) var(--ease);
+}
+.link:hover {
+  background: rgba(236, 194, 9, 0.1);
+  text-decoration: underline;
+}

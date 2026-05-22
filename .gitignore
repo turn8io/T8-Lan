@@ -1,0 +1,39 @@
+# Node
+node_modules/
+dist/
+dist-ssr/
+*.local
+
+# Vite
+.vite/
+
+# Rust / Tauri
+src-tauri/target/
+src-tauri/gen/
+# Cargo.lock wordt bewust WEL gecommit: dit is een applicatie (binary),
+# niet een library → reproduceerbare builds + CI-cache.
+
+# Editor
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Claude — lokale tooling/config, hoort niet in de publieke repo
+.claude/
+
+# Build-output van onze release-stap (vaste-naam installer staat onder target/, al genegeerd)
+*.exe

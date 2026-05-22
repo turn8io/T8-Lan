@@ -1,0 +1,46 @@
+T8-Lan License
+Copyright (c) 2026 Turn8. All rights reserved.
+
+This source code is published for transparency and inspection only.
+It is NOT open source.
+
+1. Permitted use
+   You may download, install, and run the official, unmodified T8-Lan
+   application as distributed by Turn8, for any purpose — including
+   commercial use — free of charge.
+
+2. Restrictions
+   Except as expressly permitted in Section 1, you may NOT:
+   a. copy, reproduce, or distribute the source code or the application,
+      in whole or in part;
+   b. modify, adapt, translate, or create derivative works of the source
+      code or the application;
+   c. reuse any portion of the source code in another project or product;
+   d. reverse engineer, decompile, or disassemble the application, except
+      to the extent this restriction is prohibited by applicable law;
+   e. remove or alter any copyright, trademark, or other proprietary
+      notices;
+   f. sublicense, sell, rent, lease, or otherwise transfer rights to the
+      software.
+
+3. Viewing
+   You may view and read the source code in this repository to evaluate,
+   security-review, and understand how the application works. This does not
+   grant any license to use the source code itself under Sections 2(a)-(c).
+
+4. Third-party components
+   The application includes third-party open-source components, each
+   licensed under its own terms. Those terms are unaffected by this license
+   and continue to govern those components.
+
+5. No warranty
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+   IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT. IN NO EVENT SHALL
+   THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES, OR
+   OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT, OR OTHERWISE,
+   ARISING FROM, OUT OF, OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+   OTHER DEALINGS IN THE SOFTWARE.
+
+For any use beyond Section 1 — including licensing the source code —
+contact Turn8 at info@turn8.io.
