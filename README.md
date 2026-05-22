@@ -3,16 +3,17 @@
 **T8-Lan** is een gratis, supercompacte en lichtgewicht netwerk-toolbox voor
 installateurs. Pas razendsnel de IP-instellingen van je netwerkkaart aan (statisch ↔
 DHCP), scan in één klik alle apparaten op het netwerk, en voer live ping-tests uit —
-alles vanuit een klein venstertje in je Windows system tray. Door **Turn8** —
-*improving saves time*.
+alles vanuit een klein venstertje in je Windows system tray.
+
+Ontwikkeld door **Turn8.io** — *improving saves time*.
 
 ## ⬇️ Download
 
-### ▶︎ [Download T8-Lan voor Windows](https://github.com/turn8io/T8-Lan/releases/latest)
+### ▶︎ [Download T8-Lan voor Windows](https://github.com/turn8io/T8-Lan/releases/latest/download/T8-Lan-v0.1-setup.exe)
 
-Klik op de link hierboven, download de installer uit de nieuwste release
-(`T8-Lan-v0.1-setup.exe`), dubbelklik en installeer. Klaar — verder hoef je niets met
-GitHub te doen. Windows 10/11, ±3 MB. Geen account, geen telemetry, geen cloud.
+Klik op de link hierboven — de installer (`T8-Lan-v0.1-setup.exe`) wordt **meteen
+gedownload**. Dubbelklik en installeer. Klaar — verder hoef je niets met GitHub te doen.
+Windows 10/11, ±3 MB. Geen account, geen telemetry, geen cloud.
 
 [![Download](https://img.shields.io/github/downloads/turn8io/T8-Lan/total?label=downloads&color=ecc209)](https://github.com/turn8io/T8-Lan/releases/latest)
 
@@ -103,7 +104,7 @@ T8-Lan wijzigt Windows-netwerkconfiguratie en heeft daarom admin-rechten nodig.
 De broncode is **volledig in te zien** (source-available) zodat te verifiëren is dat er
 geen data wordt verzonden buiten je eigen machine.
 
-- Geen telemetry, geen analytics, geen calls naar Turn8-servers.
+- Geen telemetry, geen analytics, geen calls naar Turn8.io-servers.
 - Settings staan lokaal in `%APPDATA%\io.turn8.t8lan\`.
 - Enige uitgaande verbindingen: jouw eigen ping-/DNS-target, de netwerkscan binnen
   je eigen subnet, en (eerste install op Win10) de WebView2-bootstrapper.
@@ -120,4 +121,4 @@ Voor ander gebruik of licentievragen: info@turn8.io.
 
 ---
 
-**Turn8** — *improving saves time* — [www.turn8.io](https://www.turn8.io)
+[**Turn8.io**](https://www.turn8.io) — *improving saves time*
