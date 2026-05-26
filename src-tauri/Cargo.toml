@@ -43,8 +43,6 @@ tokio = { version = "1", default-features = false, features = [
     "macros",
 ] }
 
-window-vibrancy = "0.5"
-
 [target.'cfg(windows)'.dependencies.windows]
 version = "0.58"
 features = [

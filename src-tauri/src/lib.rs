@@ -58,8 +58,6 @@ pub fn run() {
                 .get_webview_window("main")
                 .expect("main window should exist");
 
-            window::apply_vibrancy(&main_window);
-
             let stored_settings = settings::load(app.handle()).unwrap_or_default();
             window::position_initial(&main_window, stored_settings.window.as_ref());
 

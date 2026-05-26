@@ -4,22 +4,6 @@ use tauri::{PhysicalPosition, WebviewWindow};
 const EDGE_PADDING: i32 = 12;
 const ASSUMED_TASKBAR_HEIGHT: i32 = 48;
 
-pub fn apply_vibrancy(window: &WebviewWindow) {
-    #[cfg(target_os = "windows")]
-    {
-        use window_vibrancy::{apply_acrylic, apply_mica};
-
-        if apply_mica(window, Some(true)).is_err() {
-            let _ = apply_acrylic(window, Some((20, 20, 24, 200)));
-        }
-    }
-
-    #[cfg(not(target_os = "windows"))]
-    {
-        let _ = window;
-    }
-}
-
 pub fn position_initial(window: &WebviewWindow, saved: Option<&WindowPos>) {
     if let Some(pos) = saved {
         if is_within_any_monitor(window, pos) {

@@ -68,6 +68,21 @@ export default function App() {
     };
   }, [setSettings, setStatus]);
 
+  // Pause all CSS animations when the window loses focus (mostly: hidden tray
+  // app). The software compositor then does no work for animations nobody sees.
+  useEffect(() => {
+    const root = document.documentElement;
+    const onBlur = () => root.classList.add("is-idle");
+    const onFocus = () => root.classList.remove("is-idle");
+    if (!document.hasFocus()) root.classList.add("is-idle");
+    window.addEventListener("blur", onBlur);
+    window.addEventListener("focus", onFocus);
+    return () => {
+      window.removeEventListener("blur", onBlur);
+      window.removeEventListener("focus", onFocus);
+    };
+  }, []);
+
   // A "ping this device" click from the network scan jumps to the Ping tab.
   useEffect(() => {
     if (!pingRequest) return;

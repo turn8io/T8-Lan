@@ -45,7 +45,9 @@ body,
   margin: 0;
   padding: 0;
   height: 100%;
-  background: transparent;
+  /* Ondoorzichtig: het venster is niet meer transparant (scheelt zware
+     OS-compositing bij het slepen). DWM rondt de buitenhoeken zelf af. */
+  background: #0a0a0c;
   color: var(--fg);
   font-family: "Segoe UI Variable", "Segoe UI", system-ui, -apple-system, sans-serif;
   font-size: 12px;
@@ -56,6 +58,15 @@ body,
   -webkit-user-select: none;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+}
+
+/* Wanneer het venster de focus verliest (meestal: verborgen tray-app), pauzeren
+   alle lopende animaties zodat de software-compositor geen CPU verbruikt voor
+   iets dat niemand ziet. App.tsx zet de class op focus/blur. */
+html.is-idle *,
+html.is-idle *::before,
+html.is-idle *::after {
+  animation-play-state: paused !important;
 }
 
 button {

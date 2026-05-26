@@ -23,7 +23,7 @@
         "minimizable": false,
         "maximizable": false,
         "decorations": false,
-        "transparent": true,
+        "transparent": false,
         "shadow": true,
         "visible": false,
         "skipTaskbar": true,
