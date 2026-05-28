@@ -9,9 +9,9 @@ Ontwikkeld door **Turn8.io** — *improving saves time*.
 
 ## ⬇️ Download
 
-### ▶︎ [Download T8-Lan voor Windows](https://github.com/turn8io/T8-Lan/releases/download/v0.1.0/T8-Lan-v0.1-setup.exe)
+### ▶︎ [Download T8-Lan voor Windows](https://github.com/turn8io/T8-Lan/releases/download/v0.2.0/T8-Lan-v0.2-setup.exe)
 
-Klik op de link hierboven — de installer (`T8-Lan-v0.1-setup.exe`) wordt **meteen
+Klik op de link hierboven — de installer (`T8-Lan-v0.2-setup.exe`) wordt **meteen
 gedownload**. Dubbelklik en installeer. Klaar — verder hoef je niets met GitHub te doen.
 Windows 10/11, ±3 MB. Geen account, geen telemetry, geen cloud.
 

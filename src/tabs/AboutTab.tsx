@@ -2,7 +2,7 @@ import turn8LogoUrl from "../../logo/turn8-logo.svg?url";
 import { ipc } from "../lib/ipc";
 import { t } from "../lib/i18n";
 
-const APP_VERSION = "0.1.0";
+const APP_VERSION = "0.2.0";
 const GITHUB_URL = "https://github.com/turn8io/T8-Lan";
 const SITE_URL = "https://www.turn8.io";
 const TOOLBOX_URL = "https://www.321-test.com";

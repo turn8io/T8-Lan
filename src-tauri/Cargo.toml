@@ -1,6 +1,6 @@
 [package]
 name = "t8-lan"
-version = "0.1.0"
+version = "0.2.0"
 description = "Snel schakelen tussen statisch IP en DHCP op Windows. Door Turn8."
 authors = ["Turn8 <info@turn8.io>"]
 edition = "2021"
