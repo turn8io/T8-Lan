@@ -2,18 +2,18 @@
 
 **T8-Lan** is een gratis, supercompacte en lichtgewicht netwerk-toolbox voor
 installateurs. Pas razendsnel de IP-instellingen van je netwerkkaart aan (statisch ↔
-DHCP), scan in één klik alle apparaten op het netwerk, en voer live ping-tests uit —
+DHCP), scan in één klik alle apparaten op het netwerk, en voer live ping-tests uit -
 alles vanuit een klein venstertje in je Windows system tray.
 
-Ontwikkeld door **Turn8.io** — *improving saves time*.
+Ontwikkeld door **Turn8.io** - *improving saves time*.
 
 ## ⬇️ Download
 
 ### ▶︎ [Download T8-Lan voor Windows](https://github.com/turn8io/T8-Lan/releases/download/v0.3.0/T8-Lan-v0.3-setup.exe)
 
-Klik op de link hierboven — de installer (`T8-Lan-v0.3-setup.exe`) wordt **meteen
-gedownload**. Dubbelklik en installeer. Klaar — verder hoef je niets met GitHub te doen.
-Windows 10/11, ±3 MB. Geen account, geen telemetry, geen cloud.
+Klik op de link hierboven - de installer (`T8-Lan-v0.3-setup.exe`) wordt **meteen
+gedownload**. Dubbelklik en installeer. Klaar - verder hoef je niets met GitHub te doen.
+Windows 10/11, ruim 1 MB. Geen account, geen telemetry, geen cloud.
 
 [![Download](https://img.shields.io/github/downloads/turn8io/T8-Lan/total?label=downloads&color=ecc209&cacheSeconds=600)](https://github.com/turn8io/T8-Lan/releases/latest)
 
@@ -21,13 +21,13 @@ Windows 10/11, ±3 MB. Geen account, geen telemetry, geen cloud.
 
 ## Wat kan T8-Lan?
 
-Alles wat een installateur op locatie nodig heeft, in één klein tray-app — hieronder
+Alles wat een installateur op locatie nodig heeft, in één klein tray-app - hieronder
 alle functies op een rij.
 
 ### Razendsnel IP-instellingen aanpassen
 
 Kies je netwerkkaart en zie direct het actieve **IP, subnet en gateway**. Schakel met één
-klik naar **DHCP** of zet een **statisch IP** — schakelen kan zelfs via het
+klik naar **DHCP** of zet een **statisch IP** - schakelen kan zelfs via het
 **rechtermuismenu op het tray-icoon**, zonder het venster te openen.
 
 | DHCP-modus | Statisch IP |
@@ -55,7 +55,7 @@ numerieke volgorde.
   **NX-fingerprint** op poort 7001 (Network Optix / Nx Witness).
 - Twee ARP-rondes per scan, zodat een apparaat dat één broadcast mist alsnog gevonden wordt.
 - **ATS-alarmpanelen** (Aritech/Carrier): een lichte identify op TCP **32000** leest
-  **type, firmware en paneelnaam** uit — alleen bij apparaten die geen camera/NVR zijn.
+  **type, firmware en paneelnaam** uit - alleen bij apparaten die geen camera/NVR zijn.
 - Apparaten met een webinterface krijgen een **geel webicoon** en open je met een klik in
   de browser; per IP is er een knop om het adres te **kopiëren** of direct te **pingen**.
 
@@ -87,7 +87,7 @@ Controleer de bereikbaarheid van elk adres met een continue **2 Hz**-ping (via
 ### System tray & sneltoetsen
 
 - **Linkerklik** opent het venster; **rechterklik** geeft een contextmenu met `DHCP` en de
-  laatst gebruikte statische IP's (per adapter) — schakelen zonder het venster te openen.
+  laatst gebruikte statische IP's (per adapter) - schakelen zonder het venster te openen.
 - Het tray-icoon draagt een **groene/rode stip** als internet-indicatie (pingt de
   ingestelde DNS, met hysterese tegen flapperen); de **hover-tooltip** toont de modus en
   het huidige IP.
@@ -111,7 +111,7 @@ Controleer de bereikbaarheid van elk adres met een continue **2 Hz**-ping (via
 - Klein venster (opent altijd op 220×300, daarna vrij te vergroten) met een fijne
   bewegende gele rand; het onthoudt zijn positie.
 - **NSIS-installer** (per machine). De app draait met admin-rechten en start via een
-  **Task Scheduler**-taak automatisch bij login — **zonder telkens een UAC-prompt**, ook op
+  **Task Scheduler**-taak automatisch bij login - **zonder telkens een UAC-prompt**, ook op
   accu en zonder tijdslimiet. Uit te zetten via **Hotkeys → Starten met Windows**. Geen
   bureaublad-snelkoppeling, geen telemetry, geen cloud.
 - **Eén instantie**: een tweede start brengt het bestaande venster naar voren.
@@ -136,7 +136,7 @@ geen data wordt verzonden buiten je eigen machine.
 
 ## Licentie
 
-**Proprietair, source-available** — zie [LICENSE](LICENSE). De broncode is zichtbaar
+**Proprietair, source-available** - zie [LICENSE](LICENSE). De broncode is zichtbaar
 voor transparantie en inspectie; het is **geen open source**. Je mag de officiële,
 ongewijzigde T8-Lan-applicatie gratis gebruiken (ook commercieel). Kopiëren, wijzigen,
 afgeleide werken maken, code hergebruiken of herdistribueren is niet toegestaan.
@@ -144,4 +144,4 @@ Voor ander gebruik of licentievragen: info@turn8.io.
 
 ---
 
-[**Turn8.io**](https://www.turn8.io) — *improving saves time*
+[**Turn8.io**](https://www.turn8.io) - *improving saves time*
