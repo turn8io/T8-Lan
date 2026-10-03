@@ -23,6 +23,12 @@
 !macroend
 
 !macro NSIS_HOOK_POSTINSTALL
+  ; NTFS is hoofdletterongevoelig maar hoofdletterbewarend: bij een upgrade over een oude
+  ; installatie (t8-lan.exe, t/m v0.2.0) houdt het overschreven bestand de oude naam, en
+  ; dan staat in Taakbeheer nog "t8-lan.exe". Een rename naar dezelfde naam met de juiste
+  ; hoofdletters lost dat op; bij een verse installatie doet dit niets.
+  Rename "$INSTDIR\t8-lan.exe" "$INSTDIR\T8-Lan.exe"
+
   DetailPrint "T8-Lan: autostart-taak registreren..."
   nsExec::ExecToLog '"$INSTDIR\T8-Lan.exe" --register-autostart'
   Pop $0
