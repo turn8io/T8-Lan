@@ -142,11 +142,44 @@ fn blend(px: &mut [u8], (r, g, b): (u8, u8, u8), alpha: f32) {
     px[3] = (out_a * 255.0).round() as u8;
 }
 
+/// Menuteksten van het tray-menu in de zes UI-talen: (naar DHCP, statisch zetten, open,
+/// afsluiten). Volgt `settings.language`; "auto" = Windows-weergavetaal.
+fn menu_labels(lang: &str) -> [&'static str; 4] {
+    match lang {
+        "nl" => ["Schakel naar DHCP", "Statisch IP", "Open T8-Lan", "Afsluiten"],
+        "de" => ["Zu DHCP wechseln", "Statische IP", "T8-Lan öffnen", "Beenden"],
+        "fr" => ["Passer en DHCP", "IP statique", "Ouvrir T8-Lan", "Quitter"],
+        "it" => ["Passa a DHCP", "IP statico", "Apri T8-Lan", "Esci"],
+        "es" => ["Cambiar a DHCP", "IP estática", "Abrir T8-Lan", "Salir"],
+        _ => ["Switch to DHCP", "Set static", "Open T8-Lan", "Quit"],
+    }
+}
+
+/// Effectieve UI-taal: de instelling, of bij "auto" de Windows-weergavetaal van de
+/// gebruiker (zelfde bron als `navigator.language` in de webview).
+fn effective_lang(settings: &Settings) -> String {
+    if settings.language != "auto" && !settings.language.is_empty() {
+        return settings.language.clone();
+    }
+    // SAFETY: eenvoudige Win32-aanroep zonder argumenten.
+    let langid = unsafe { windows::Win32::Globalization::GetUserDefaultUILanguage() };
+    match langid & 0x3FF {
+        0x13 => "nl",
+        0x07 => "de",
+        0x0C => "fr",
+        0x10 => "it",
+        0x0A => "es",
+        _ => "en",
+    }
+    .to_string()
+}
+
 fn build_menu(app: &AppHandle, settings: &Settings) -> tauri::Result<Menu<tauri::Wry>> {
-    let dhcp_item = MenuItem::with_id(app, "dhcp", "Switch to DHCP", true, None::<&str>)?;
+    let [l_dhcp, l_static, l_open, l_quit] = menu_labels(&effective_lang(settings));
+    let dhcp_item = MenuItem::with_id(app, "dhcp", l_dhcp, true, None::<&str>)?;
     let separator = PredefinedMenuItem::separator(app)?;
-    let open_item = MenuItem::with_id(app, "open", "Open settings", true, None::<&str>)?;
-    let quit_item = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
+    let open_item = MenuItem::with_id(app, "open", l_open, true, None::<&str>)?;
+    let quit_item = MenuItem::with_id(app, "quit", l_quit, true, None::<&str>)?;
 
     let mut items: Vec<&dyn tauri::menu::IsMenuItem<tauri::Wry>> = vec![&dhcp_item, &separator];
 
@@ -155,8 +188,8 @@ fn build_menu(app: &AppHandle, settings: &Settings) -> tauri::Result<Menu<tauri:
         if let Some(recents) = settings.recent_ips_by_adapter.get(&adapter_ref.friendly_name) {
             for recent in recents.iter().take(5) {
                 let label = match &recent.label {
-                    Some(l) if !l.is_empty() => format!("Set Static {} - {}", recent.ip, l),
-                    _ => format!("Set Static {}", recent.ip),
+                    Some(l) if !l.is_empty() => format!("{l_static} {} - {}", recent.ip, l),
+                    _ => format!("{l_static} {}", recent.ip),
                 };
                 let id = format!("recent::{}", recent.ip);
                 recent_items.push(MenuItem::with_id(app, &id, label, true, None::<&str>)?);

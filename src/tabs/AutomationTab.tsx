@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { useStore, flash } from "../store";
 import { ipc } from "../lib/ipc";
-import { t } from "../lib/i18n";
+import { t, LANGUAGES, type LangSetting } from "../lib/i18n";
 import Toggle from "../components/Toggle";
 import HotkeyInput from "../components/HotkeyInput";
+import Select from "../components/Select";
 
 export default function AutomationTab() {
   const settings = useStore((s) => s.settings);
@@ -36,9 +37,25 @@ export default function AutomationTab() {
     }
   };
 
+  // Taal: opslaan; App herleidt de effectieve taal uit settings en remount de shell.
+  const setLanguageSetting = async (code: string) => {
+    const next = { ...settings, language: code as LangSetting };
+    setSettings(next);
+    await ipc.saveSettings(next).catch((e) => flash(String(e), "err"));
+  };
+
   return (
     <section className="tab-content">
       <div className="status-card">
+        <div className="hk-row">
+          <span className="status-line__key">{t("settings.language")}</span>
+          <Select
+            className="lang-select"
+            value={settings.language ?? "auto"}
+            options={LANGUAGES.map((l) => ({ value: l.code, label: l.label }))}
+            onChange={setLanguageSetting}
+          />
+        </div>
         <div className="hk-row">
           <span className="status-line__key">{t("auto.autostart")}</span>
           <Toggle

@@ -115,6 +115,8 @@ Controleer de bereikbaarheid van elk adres met een continue **2 Hz**-ping (via
   accu en zonder tijdslimiet. Uit te zetten via **Hotkeys → Starten met Windows**. Geen
   bureaublad-snelkoppeling, geen telemetry, geen cloud.
 - **Eén instantie**: een tweede start brengt het bestaande venster naar voren.
+- **Zes talen** (Nederlands, Engels, Duits, Frans, Italiaans, Spaans): volgt standaard de
+  Windows-weergavetaal, aan te passen onder **Instellingen**.
 
 ---
 

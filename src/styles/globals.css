@@ -1464,6 +1464,12 @@ textarea {
   pointer-events: none;
 }
 
+/* taalkeuze: zelfde breedte als de hotkey-knoppen eronder */
+.lang-select {
+  width: 118px;
+  flex-shrink: 0;
+}
+
 .hotkey-input {
   min-width: 96px;
   text-align: center;

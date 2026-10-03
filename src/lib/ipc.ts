@@ -81,6 +81,8 @@ export type Settings = {
   examples_seeded: boolean;
   autostart: boolean;
   dhcp: DhcpConfig;
+  /** "auto" = taal van Windows; anders een vaste taalcode. */
+  language: "auto" | "nl" | "en" | "de" | "fr" | "it" | "es";
 };
 
 export type SsidAction =

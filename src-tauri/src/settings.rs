@@ -41,6 +41,13 @@ pub struct Settings {
     pub autostart: bool,
     #[serde(default)]
     pub dhcp: DhcpSettings,
+    /// UI-taal: "auto" (Windows-weergavetaal) of een vaste code (nl, en, de, fr, it, es).
+    #[serde(default = "default_language")]
+    pub language: String,
+}
+
+fn default_language() -> String {
+    "auto".to_string()
 }
 
 /// Instellingen van de ingebouwde DHCP-server (tab "DHCP").
@@ -195,6 +202,7 @@ impl Default for Settings {
             examples_seeded: false,
             autostart: true,
             dhcp: DhcpSettings::default(),
+            language: default_language(),
         }
     }
 }

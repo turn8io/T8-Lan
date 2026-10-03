@@ -9,7 +9,7 @@ import {
   IconWifi,
   IconDns,
   IconPing,
-  IconAuto,
+  IconSettings,
   IconAbout,
 } from "./components/icons";
 import ConfirmDialog from "./components/ConfirmDialog";
@@ -23,7 +23,7 @@ import AutomationTab from "./tabs/AutomationTab";
 import AboutTab from "./tabs/AboutTab";
 import { useStore, flash } from "./store";
 import { ipc, dnsPrimary, type SwitchResultEvent, type DhcpStatus } from "./lib/ipc";
-import { t } from "./lib/i18n";
+import { t, resolveLang, setLanguage } from "./lib/i18n";
 
 export default function App() {
   const [active, setActive] = useState<TabKey>("adapter");
@@ -34,6 +34,12 @@ export default function App() {
   const dnsAlive = useStore((s) => s.dnsAlive);
   const pingRequest = useStore((s) => s.pingRequest);
   const dhcpRunning = useStore((s) => s.dhcpStatus?.running ?? false);
+  const langSetting = useStore((s) => s.settings?.language);
+
+  // Taal vóór het renderen van de tabs vastzetten; de shell krijgt de taal als key zodat
+  // alle t()-teksten verversen bij een wissel.
+  const lang = resolveLang(langSetting);
+  setLanguage(lang);
 
   const TABS = [
     { key: "adapter" as TabKey, label: t("tab.adapter"), icon: <IconAdapter /> },
@@ -56,7 +62,7 @@ export default function App() {
         ),
     },
     { key: "ping" as TabKey, label: t("tab.ping"), icon: <IconPing /> },
-    { key: "automation" as TabKey, label: t("tab.auto"), icon: <IconAuto /> },
+    { key: "automation" as TabKey, label: t("tab.settings"), icon: <IconSettings /> },
     { key: "about" as TabKey, label: t("tab.about"), icon: <IconAbout /> },
   ];
 
@@ -151,7 +157,7 @@ export default function App() {
 
   return (
     <div className="app" data-state={status?.state ?? "idle"}>
-      <div className="shell">
+      <div className="shell" key={lang}>
         <Titlebar />
         <Tabs tabs={TABS} active={active} onChange={handleTabChange} />
         <main className="tab-stage" data-direction={direction}>
