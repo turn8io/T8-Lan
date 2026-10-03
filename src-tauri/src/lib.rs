@@ -38,6 +38,7 @@ pub fn run() {
         .manage(Arc::new(switching::UndoState::new()))
         .manage(Arc::new(ssid_watcher::SsidWatcher::new()))
         .manage(Arc::new(network::dhcp::DhcpServer::new()))
+        .manage(Arc::new(network::hotspot::Hotspot::new()))
         .invoke_handler(tauri::generate_handler![
             commands::get_adapters,
             commands::get_current_status,
@@ -66,6 +67,8 @@ pub fn run() {
             commands::dhcp_start,
             commands::dhcp_stop,
             commands::dhcp_status,
+            commands::hotspot_start,
+            commands::hotspot_stop,
         ])
         .setup(|app| {
             let main_window = app
@@ -155,6 +158,9 @@ pub fn run() {
                 if server.is_running() {
                     let _ = server.stop(app);
                 }
+            }
+            if let Some(hotspot) = app.try_state::<Arc<network::hotspot::Hotspot>>() {
+                hotspot.stop();
             }
         }
     });

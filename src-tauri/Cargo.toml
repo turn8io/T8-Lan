@@ -1,6 +1,6 @@
 [package]
 name = "t8-lan"
-version = "0.3.1"
+version = "0.3.2"
 description = "Snel schakelen tussen statisch IP en DHCP op Windows. Door Turn8."
 authors = ["Turn8 <info@turn8.io>"]
 edition = "2021"
@@ -56,6 +56,11 @@ tokio = { version = "1", default-features = false, features = [
 [target.'cfg(windows)'.dependencies.windows]
 version = "0.58"
 features = [
+    # WinRT: Wi-Fi Direct-hotspot (src/network/hotspot.rs)
+    "Devices_WiFiDirect",
+    "Foundation",
+    "Security_Credentials",
+    "Win32_System_WinRT",
     "Win32_Foundation",
     "Win32_Globalization",
     "Win32_NetworkManagement_IpHelper",

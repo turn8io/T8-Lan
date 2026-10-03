@@ -7,7 +7,7 @@ const ASSUMED_TASKBAR_HEIGHT: i32 = 48;
 /// Standaardafmeting (logische pixels) waarin het venster altijd opent. Het venster is
 /// daarna vrij te vergroten/verkleinen, maar elke keer dat het (opnieuw) getoond wordt
 /// begint het compact.
-pub const DEFAULT_WIDTH: f64 = 220.0;
+pub const DEFAULT_WIDTH: f64 = 240.0;
 pub const DEFAULT_HEIGHT: f64 = 300.0;
 
 /// Zet het venster terug op de compacte standaardmaat.

@@ -49,6 +49,9 @@ export type DhcpConfig = {
   pool_start: string;
   pool_size: number;
   lease_secs: number;
+  /** WiFi-hotspot (Wi-Fi Direct) met de DHCP-server erachter. */
+  hotspot_ssid: string;
+  hotspot_password: string;
 };
 
 export const DHCP_DEFAULTS: DhcpConfig = {
@@ -57,7 +60,11 @@ export const DHCP_DEFAULTS: DhcpConfig = {
   pool_start: "192.168.8.100",
   pool_size: 50,
   lease_secs: 3600,
+  hotspot_ssid: "T8-Lan",
+  hotspot_password: "turn8-lan",
 };
+
+export type HotspotInfo = { ssid: string; adapter: string };
 
 export type Settings = {
   version: number;
@@ -134,6 +141,8 @@ export type DhcpStatus = {
   listening: boolean;
   leases: DhcpLease[];
   error: string | null;
+  /** Gevuld als de server op een eigen WiFi-hotspot draait. */
+  hotspot: HotspotInfo | null;
 };
 
 export const ipc = {
@@ -171,6 +180,9 @@ export const ipc = {
     invoke<DhcpStatus>("dhcp_start", { adapterName: adapter_name, config }),
   dhcpStop: () => invoke<DhcpStatus>("dhcp_stop"),
   dhcpStatus: () => invoke<DhcpStatus>("dhcp_status"),
+  hotspotStart: (ssid: string, password: string, config: DhcpConfig) =>
+    invoke<DhcpStatus>("hotspot_start", { ssid, password, config }),
+  hotspotStop: () => invoke<DhcpStatus>("hotspot_stop"),
   getAppVersion: () => invoke<string>("get_app_version"),
   showMainWindow: () => invoke<void>("show_main_window"),
 };

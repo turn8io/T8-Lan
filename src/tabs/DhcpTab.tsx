@@ -23,8 +23,9 @@ export default function DhcpTab() {
   const [draft, setDraft] = useState("");
 
   const running = dhcp?.running ?? false;
+  const viaHotspot = running && dhcp?.hotspot != null;
   const adapterName = settings?.selected_adapter?.friendly_name ?? null;
-  const cfg: DhcpConfig = settings?.dhcp ?? DHCP_DEFAULTS;
+  const cfg: DhcpConfig = { ...DHCP_DEFAULTS, ...(settings?.dhcp ?? {}) };
 
   useEffect(() => {
     let cancelled = false;
@@ -86,6 +87,38 @@ export default function DhcpTab() {
     }
   };
 
+  // Hotspot: eigen WiFi-netwerk (Wi-Fi Direct) met de DHCP-server op de virtuele adapter.
+  // Geïsoleerd netwerk, dus geen "enge" waarschuwing nodig.
+  const startHotspot = async () => {
+    if (cfg.hotspot_password.length < 8 || cfg.hotspot_password.length > 63) {
+      flash(t("dhcp.passwordShort"), "warn");
+      return;
+    }
+    setBusy(true);
+    try {
+      const s = await ipc.hotspotStart(cfg.hotspot_ssid, cfg.hotspot_password, cfg);
+      setDhcp(s);
+      flash(t("dhcp.hotspotStarted").replace("{ssid}", cfg.hotspot_ssid), "ok");
+    } catch (e) {
+      flash(String(e), "err");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const stopHotspot = async () => {
+    setBusy(true);
+    try {
+      const s = await ipc.hotspotStop();
+      setDhcp(s);
+      flash(t("dhcp.hotspotStopped"), "ok");
+    } catch (e) {
+      flash(String(e), "err");
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const beginEdit = (key: keyof DhcpConfig) => {
     if (running) return;
     setDraft(String(cfg[key]));
@@ -103,6 +136,19 @@ export default function DhcpTab() {
       await persist({ ...cfg, pool_size: n });
       return;
     }
+    if (key === "hotspot_ssid") {
+      if (v.length < 1 || v.length > 32) return;
+      await persist({ ...cfg, hotspot_ssid: v });
+      return;
+    }
+    if (key === "hotspot_password") {
+      if (v.length < 8 || v.length > 63) {
+        flash(t("dhcp.passwordShort"), "warn");
+        return;
+      }
+      await persist({ ...cfg, hotspot_password: v });
+      return;
+    }
     if (!isValidIpv4(v)) return;
     await persist({ ...cfg, [key]: v });
   };
@@ -117,6 +163,7 @@ export default function DhcpTab() {
         <input
           autoFocus
           className="status-edit mono"
+          maxLength={key === "hotspot_password" ? 63 : key === "hotspot_ssid" ? 32 : 15}
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           onBlur={commitEdit}
@@ -150,8 +197,8 @@ export default function DhcpTab() {
           {t("dhcp.server")}
         </span>
         <Toggle
-          on={running}
-          disabled={busy || !settings}
+          on={running && !viaHotspot}
+          disabled={busy || !settings || viaHotspot}
           onChange={running ? stop : start}
           aria-label={t("dhcp.server")}
         />
@@ -166,9 +213,33 @@ export default function DhcpTab() {
 
       {running && dhcp?.error && <p className="hint hint--err">{dhcp.error}</p>}
       {running && !dhcp?.error && leases.length === 0 && (
-        <p className="hint">{t("dhcp.waiting").replace("{adapter}", dhcp?.adapter ?? "")}</p>
+        <p className="hint">
+          {t("dhcp.waiting").replace(
+            "{adapter}",
+            viaHotspot ? `${dhcp?.hotspot?.ssid} (${t("dhcp.viaHotspot")})` : dhcp?.adapter ?? "",
+          )}
+        </p>
       )}
       {!running && <p className="hint">{t("dhcp.hint")}</p>}
+
+      {/* WiFi-hotspot: eigen netwerk met dezelfde DHCP-instellingen erachter. */}
+      <div className="tile">
+        <span className="tile__label">
+          <span className={`tab__dot dns-health__dot ${viaHotspot ? "tab__dot--ok" : ""}`} />
+          {t("dhcp.hotspot")}
+        </span>
+        <Toggle
+          on={viaHotspot}
+          disabled={busy || !settings || (running && !viaHotspot)}
+          onChange={viaHotspot ? stopHotspot : startHotspot}
+          aria-label={t("dhcp.hotspot")}
+        />
+      </div>
+      <div className={`status-card${viaHotspot ? " dhcp-card--running" : ""}`}>
+        {row("hotspot_ssid", t("dhcp.ssid"), cfg.hotspot_ssid)}
+        {row("hotspot_password", t("dhcp.password"), cfg.hotspot_password)}
+      </div>
+      {!running && <p className="hint">{t("dhcp.hotspotHint")}</p>}
 
       {leases.length > 0 && (
         <>

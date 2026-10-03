@@ -9,7 +9,7 @@ Ontwikkeld door **Turn8.io** - *improving saves time*.
 
 ## ⬇️ Download
 
-### ▶︎ [Download T8-Lan voor Windows](https://github.com/turn8io/T8-Lan/releases/download/v0.3.1/T8-Lan-v0.3-setup.exe)
+### ▶︎ [Download T8-Lan voor Windows](https://github.com/turn8io/T8-Lan/releases/download/v0.3.2/T8-Lan-v0.3-setup.exe)
 
 Klik op de link hierboven - de installer (`T8-Lan-v0.3-setup.exe`) wordt **meteen
 gedownload**. Dubbelklik en installeer. Klaar - verder hoef je niets met GitHub te doen.
@@ -74,6 +74,9 @@ om te pingen of te kopiëren.
   tweede DHCP-server het netwerk plat.
 - Bij uitschakelen (of afsluiten van T8-Lan) krijgt de adapter zijn vorige configuratie
   terug.
+- **WiFi-hotspot**: dezelfde DHCP-server achter een eigen WiFi-netwerk (naam en
+  wachtwoord instelbaar), via Wi-Fi Direct. Geen internet-delen, geen 192.168.137.x van
+  Windows: gewoon ons eigen 192.168.8.x. Werkt op vrijwel elke laptop met Wi-Fi Direct.
 
 ### Live ping-test
 
@@ -108,7 +111,7 @@ Controleer de bereikbaarheid van elk adres met een continue **2 Hz**-ping (via
 
 ### Uiterlijk & installatie
 
-- Klein venster (opent altijd op 220×300, daarna vrij te vergroten) met een fijne
+- Klein venster (opent altijd op 240×300, daarna vrij te vergroten) met een fijne
   bewegende gele rand; het onthoudt zijn positie.
 - **NSIS-installer** (per machine). De app draait met admin-rechten en start via een
   **Task Scheduler**-taak automatisch bij login - **zonder telkens een UAC-prompt**, ook op

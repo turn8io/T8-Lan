@@ -1,5 +1,5 @@
 /* ============================================================
-   T8-Lan — compacte design tokens (venster 248x340)
+   T8-Lan — compacte design tokens (venster 240x300)
    ============================================================ */
 
 :root {
@@ -273,6 +273,8 @@ textarea {
 
 .tab {
   flex: 1;
+  min-width: 0;
+  padding: 0; /* geen browser-standaardpadding: acht tabs moeten in de smalle shell passen */
   height: 22px;
   display: flex;
   align-items: center;
@@ -1167,12 +1169,19 @@ textarea {
   color: var(--fg-muted);
   text-transform: uppercase;
   letter-spacing: 0.4px;
-  flex-shrink: 0;
+  /* Het label krijgt voorrang (nooit afkappen); de control neemt de restruimte. */
+  flex: 0 0 auto;
+  white-space: nowrap;
 }
 .tile__control {
-  flex: none;
-  width: 78%;
+  /* Hooguit 78% van de tegel; bij lange labels (Nederlands, Duits) automatisch smaller
+     i.p.v. buiten de tegel te steken. */
+  flex: 1 1 0;
   min-width: 0;
+  max-width: 78%;
+}
+.tile {
+  overflow: hidden;
 }
 /* shorter controls in the adapter tiles (20% less tall, same font size) */
 .tile__control .cselect__btn,

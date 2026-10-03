@@ -72,6 +72,11 @@ pub struct DhcpSettings {
     pub pool_size: u32,
     #[serde(default = "default_dhcp_lease_secs")]
     pub lease_secs: u32,
+    /// WiFi-hotspot (Wi-Fi Direct) met de DHCP-server erachter: netwerknaam en WPA2-wachtwoord.
+    #[serde(default = "default_hotspot_ssid")]
+    pub hotspot_ssid: String,
+    #[serde(default = "default_hotspot_password")]
+    pub hotspot_password: String,
 }
 
 impl Default for DhcpSettings {
@@ -82,8 +87,17 @@ impl Default for DhcpSettings {
             pool_start: default_dhcp_pool_start(),
             pool_size: default_dhcp_pool_size(),
             lease_secs: default_dhcp_lease_secs(),
+            hotspot_ssid: default_hotspot_ssid(),
+            hotspot_password: default_hotspot_password(),
         }
     }
+}
+
+fn default_hotspot_ssid() -> String {
+    "T8-Lan".to_string()
+}
+fn default_hotspot_password() -> String {
+    "turn8-lan".to_string()
 }
 
 fn default_dhcp_server_ip() -> String {

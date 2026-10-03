@@ -182,6 +182,8 @@ pub struct DhcpStatus {
     pub listening: bool,
     pub leases: Vec<Lease>,
     pub error: Option<String>,
+    /// Gevuld als de server op een eigen WiFi-hotspot draait.
+    pub hotspot: Option<crate::network::hotspot::HotspotInfo>,
 }
 
 /// Door de serverthread en de IPC-laag gedeelde toestand.
@@ -200,6 +202,7 @@ struct Running {
     adapter: String,
     restore: PreviousConfig,
     pool: Pool,
+    hotspot: Option<crate::network::hotspot::HotspotInfo>,
 }
 
 /// Door Tauri beheerde servertoestand (één server tegelijk).
@@ -239,12 +242,20 @@ impl DhcpServer {
             listening,
             leases,
             error,
+            hotspot: run.hotspot.clone(),
         }
     }
 
     /// Start de server op `adapter_name`: zet de adapter op het server-IP (zonder
-    /// gateway), onthoudt de vorige configuratie en start de luisterthread.
-    pub fn start(&self, app: &AppHandle, adapter_name: &str, cfg: &DhcpConfig) -> Result<(), String> {
+    /// gateway), onthoudt de vorige configuratie en start de luisterthread. `hotspot`
+    /// is informatief (zichtbaar in de status) als de adapter een eigen hotspot is.
+    pub fn start(
+        &self,
+        app: &AppHandle,
+        adapter_name: &str,
+        cfg: &DhcpConfig,
+        hotspot: Option<crate::network::hotspot::HotspotInfo>,
+    ) -> Result<(), String> {
         let pool = Pool::parse(cfg)?;
         let mut guard = self.inner.lock().map_err(|e| format!("lock: {e}"))?;
         if guard.is_some() {
@@ -276,9 +287,10 @@ impl DhcpServer {
             let app = app.clone();
             let stop = Arc::clone(&stop);
             let shared = Arc::clone(&shared);
+            let hotspot = hotspot.clone();
             std::thread::Builder::new()
                 .name("t8-dhcp".into())
-                .spawn(move || serve(app, pool, shared, stop))
+                .spawn(move || serve(app, pool, shared, stop, hotspot))
                 .map_err(|e| format!("serverthread starten: {e}"))?
         };
         *guard = Some(Running {
@@ -288,6 +300,7 @@ impl DhcpServer {
             adapter: adapter_name.to_string(),
             restore,
             pool,
+            hotspot,
         });
         drop(guard);
         emit_status(app, self.status());
@@ -323,7 +336,12 @@ fn emit_status(app: &AppHandle, status: DhcpStatus) {
     let _ = app.emit(STATUS_EVENT, status);
 }
 
-fn status_snapshot(pool: &Pool, shared: &Arc<Mutex<Shared>>, adapter: Option<String>) -> DhcpStatus {
+fn status_snapshot(
+    pool: &Pool,
+    shared: &Arc<Mutex<Shared>>,
+    adapter: Option<String>,
+    hotspot: &Option<crate::network::hotspot::HotspotInfo>,
+) -> DhcpStatus {
     let (leases, listening, error) = match shared.lock() {
         Ok(s) => (s.leases.clone(), s.listening, s.error.clone()),
         Err(_) => (Vec::new(), false, None),
@@ -336,12 +354,19 @@ fn status_snapshot(pool: &Pool, shared: &Arc<Mutex<Shared>>, adapter: Option<Str
         listening,
         leases,
         error,
+        hotspot: hotspot.clone(),
     }
 }
 
 // ---- Serverthread ----
 
-fn serve(app: AppHandle, pool: Pool, shared: Arc<Mutex<Shared>>, stop: Arc<AtomicBool>) {
+fn serve(
+    app: AppHandle,
+    pool: Pool,
+    shared: Arc<Mutex<Shared>>,
+    stop: Arc<AtomicBool>,
+    hotspot: Option<crate::network::hotspot::HotspotInfo>,
+) {
     let mut buf = [0u8; 1500];
     let mut last_error: Option<String> = None;
 
@@ -355,7 +380,7 @@ fn serve(app: AppHandle, pool: Pool, shared: Arc<Mutex<Shared>>, stop: Arc<Atomi
                         s.listening = false;
                         s.error = Some(e);
                     }
-                    emit_status(&app, status_snapshot(&pool, &shared, None));
+                    emit_status(&app, status_snapshot(&pool, &shared, None, &hotspot));
                 }
                 // Wachten in kleine stapjes zodat een stop snel doorkomt.
                 let waited = std::time::Instant::now();
@@ -373,7 +398,7 @@ fn serve(app: AppHandle, pool: Pool, shared: Arc<Mutex<Shared>>, stop: Arc<Atomi
             s.listening = true;
             s.error = None;
         }
-        emit_status(&app, status_snapshot(&pool, &shared, None));
+        emit_status(&app, status_snapshot(&pool, &shared, None, &hotspot));
 
         loop {
             if stop.load(Ordering::SeqCst) {
@@ -392,7 +417,7 @@ fn serve(app: AppHandle, pool: Pool, shared: Arc<Mutex<Shared>>, stop: Arc<Atomi
                         let dest = reply_dest(&req, msg_type, from);
                         let _ = socket.send_to(&bytes, dest);
                     }
-                    emit_status(&app, status_snapshot(&pool, &shared, None));
+                    emit_status(&app, status_snapshot(&pool, &shared, None, &hotspot));
                 }
                 Err(e) => match e.kind() {
                     std::io::ErrorKind::WouldBlock | std::io::ErrorKind::TimedOut => {}

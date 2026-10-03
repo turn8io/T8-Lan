@@ -1,4 +1,4 @@
-use crate::network::{adapter, dhcp, ip, ping, wifi, AdapterInfo, CurrentStatus, StatusState};
+use crate::network::{adapter, dhcp, hotspot, ip, ping, wifi, AdapterInfo, CurrentStatus, StatusState};
 use crate::settings::{self, Settings};
 use crate::switching::{self, PreviousConfig, UndoState};
 use std::str::FromStr;
@@ -353,11 +353,63 @@ pub async fn dhcp_start(
 ) -> Result<dhcp::DhcpStatus, String> {
     let server = state.inner().clone();
     let handle = app.clone();
-    tokio::task::spawn_blocking(move || server.start(&handle, &adapter_name, &config))
+    tokio::task::spawn_blocking(move || server.start(&handle, &adapter_name, &config, None))
         .await
         .map_err(|e| format!("dhcp worker faalt: {e}"))??;
     let _ = crate::tray::rebuild(&app);
     Ok(state.status())
+}
+
+// ---- WiFi-hotspot (Wi-Fi Direct) + DHCP-server op de virtuele adapter ----
+
+#[tauri::command]
+pub async fn hotspot_start(
+    app: AppHandle,
+    dhcp_state: tauri::State<'_, Arc<dhcp::DhcpServer>>,
+    hotspot_state: tauri::State<'_, Arc<hotspot::Hotspot>>,
+    ssid: String,
+    password: String,
+    config: dhcp::DhcpConfig,
+) -> Result<dhcp::DhcpStatus, String> {
+    if dhcp_state.is_running() {
+        return Err("DHCP-server draait al; stop die eerst".into());
+    }
+    let dhcp_server = dhcp_state.inner().clone();
+    let hotspot = hotspot_state.inner().clone();
+    let handle = app.clone();
+    tokio::task::spawn_blocking(move || {
+        let info = hotspot.start(&ssid, &password)?;
+        // Windows zet de virtuele adapter op APIPA; even de tijd geven voordat netsh erop
+        // schrijft. Mislukt de DHCP-start, dan de hotspot weer afbreken.
+        std::thread::sleep(std::time::Duration::from_millis(500));
+        if let Err(e) = dhcp_server.start(&handle, &info.adapter, &config, Some(info.clone())) {
+            hotspot.stop();
+            return Err(e);
+        }
+        Ok(())
+    })
+    .await
+    .map_err(|e| format!("hotspot worker faalt: {e}"))??;
+    Ok(dhcp_state.status())
+}
+
+#[tauri::command]
+pub async fn hotspot_stop(
+    app: AppHandle,
+    dhcp_state: tauri::State<'_, Arc<dhcp::DhcpServer>>,
+    hotspot_state: tauri::State<'_, Arc<hotspot::Hotspot>>,
+) -> Result<dhcp::DhcpStatus, String> {
+    let dhcp_server = dhcp_state.inner().clone();
+    let hotspot = hotspot_state.inner().clone();
+    let handle = app.clone();
+    tokio::task::spawn_blocking(move || {
+        let r = dhcp_server.stop(&handle);
+        hotspot.stop();
+        r
+    })
+    .await
+    .map_err(|e| format!("hotspot worker faalt: {e}"))??;
+    Ok(dhcp_state.status())
 }
 
 #[tauri::command]

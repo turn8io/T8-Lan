@@ -1,6 +1,7 @@
 pub mod adapter;
 pub mod dhcp;
 pub mod dns;
+pub mod hotspot;
 pub mod ip;
 mod netsh;
 pub mod ping;
