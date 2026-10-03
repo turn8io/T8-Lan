@@ -53,6 +53,9 @@
       "nsis": {
         "installMode": "perMachine",
         "installerIcon": "icons/icon.ico",
+        "uninstallerIcon": "icons/icon.ico",
+        "headerImage": "installer/header.bmp",
+        "uninstallerHeaderImage": "installer/header.bmp",
         "installerHooks": "installer/installer-hooks.nsh",
         "template": "installer/installer.nsi",
         "languages": ["English", "Dutch"],
