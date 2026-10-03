@@ -28,6 +28,17 @@ export const IconSubnet = ({ size = 18 }: IconProps) => (
   </svg>
 );
 
+/** DHCP: een kastje dat adressen "uitzendt". */
+export const IconDhcp = ({ size = 18 }: IconProps) => (
+  <svg {...base(size)}>
+    <rect x="3" y="14" width="18" height="7" rx="2" />
+    <path d="M7 17.5h.01M11 17.5h.01" />
+    <path d="M12 14v-3" />
+    <path d="M8.5 7.5a5 5 0 0 1 7 0" />
+    <path d="M5.5 4.5a9.5 9.5 0 0 1 13 0" />
+  </svg>
+);
+
 export const IconDns = ({ size = 18 }: IconProps) => (
   <svg {...base(size)}>
     <circle cx="12" cy="12" r="9" />

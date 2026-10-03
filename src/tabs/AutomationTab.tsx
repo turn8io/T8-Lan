@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useStore, flash } from "../store";
 import { ipc } from "../lib/ipc";
 import { t } from "../lib/i18n";
@@ -7,6 +8,7 @@ import HotkeyInput from "../components/HotkeyInput";
 export default function AutomationTab() {
   const settings = useStore((s) => s.settings);
   const setSettings = useStore((s) => s.setSettings);
+  const [autostartBusy, setAutostartBusy] = useState(false);
 
   if (!settings) return <p className="hint">{t("common.loading")}</p>;
 
@@ -20,8 +22,34 @@ export default function AutomationTab() {
     await applyHotkeys({ ...settings, global_hotkey_enabled: !settings.global_hotkey_enabled });
   };
 
+  // Autostart: de backend bewaart de instelling en beheert de Taakplanner-taak.
+  const toggleAutostart = async () => {
+    const enabled = !settings.autostart;
+    setAutostartBusy(true);
+    setSettings({ ...settings, autostart: enabled });
+    try {
+      await ipc.setAutostart(enabled);
+    } catch (e) {
+      flash(String(e), "err");
+    } finally {
+      setAutostartBusy(false);
+    }
+  };
+
   return (
     <section className="tab-content">
+      <div className="status-card">
+        <div className="hk-row">
+          <span className="status-line__key">{t("auto.autostart")}</span>
+          <Toggle
+            on={settings.autostart}
+            disabled={autostartBusy}
+            onChange={toggleAutostart}
+            aria-label={t("auto.autostart")}
+          />
+        </div>
+      </div>
+
       <div className="status-card">
         <div className="hk-row">
           <span className="status-line__key">{t("auto.hotkeysOn")}</span>

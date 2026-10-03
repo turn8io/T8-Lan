@@ -1,4 +1,6 @@
 import { ipc, isValidIpv4 } from "./ipc";
+import { confirmDialog } from "../store";
+import { t } from "./i18n";
 
 /**
  * Apply a static IP to an adapter, with an ARP-conflict confirmation.
@@ -11,9 +13,13 @@ export async function applyStaticIp(adapterName: string, ip: string): Promise<vo
 
   const conflictMac = await ipc.checkIpConflict(ip).catch(() => null);
   if (conflictMac) {
-    const ok = window.confirm(
-      `IP ${ip} is al in gebruik door MAC ${conflictMac}. Toch toepassen?`,
-    );
+    const ok = await confirmDialog({
+      title: t("conflict.title"),
+      body: t("conflict.body").replace("{ip}", ip).replace("{mac}", conflictMac),
+      confirmLabel: t("conflict.confirm"),
+      cancelLabel: t("common.cancel"),
+      danger: true,
+    });
     if (!ok) throw new Error("cancelled");
   }
   await ipc.switchToStatic(adapterName, ip);

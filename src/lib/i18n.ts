@@ -8,6 +8,7 @@ const nl: Dict = {
   // tabs
   "tab.adapter": "Adapter",
   "tab.network": "Netwerk",
+  "tab.dhcp": "DHCP",
   "tab.wifi": "WiFi",
   "tab.dns": "DNS",
   "tab.ping": "Ping",
@@ -40,7 +41,28 @@ const nl: Dict = {
   "network.copyIp": "Kopieer IP",
   "network.copied": "Gekopieerd",
   "network.pingDevice": "Ping dit apparaat",
-  "network.noCurrentIp": "Geen huidig IP — schakel eerst naar DHCP of statisch",
+  "network.noCurrentIp": "Geen huidig IP - schakel eerst naar DHCP of statisch",
+  // dhcp-server
+  "dhcp.server": "DHCP-server",
+  "dhcp.serverIp": "Server IP",
+  "dhcp.poolStart": "Pool vanaf",
+  "dhcp.poolSize": "Scope",
+  "dhcp.subnet": "Subnet",
+  "dhcp.leases": "Uitgegeven adressen",
+  "dhcp.waiting": "Actief op {adapter} - wacht op apparaten...",
+  "dhcp.hint":
+    "Deelt IP-adressen uit op de gekozen adapter. Voor netwerken zonder DHCP of een apparaat aan een directe kabel.",
+  "dhcp.noAdapter": "Kies eerst een netwerkkaart op de Adapter-tab",
+  "dhcp.warnTitle": "DHCP-server starten?",
+  "dhcp.warnBody":
+    "Je start een DHCP-server op {adapter}. In een bestaand netwerk deelt die verkeerde IP-adressen uit en kan het hele netwerk uitvallen. Alleen gebruiken op een losgekoppeld netwerk of een directe kabel naar één apparaat.",
+  "dhcp.warnConfirm": "Ik ken het risico, start",
+  "dhcp.started": "DHCP-server gestart",
+  "dhcp.stopped": "DHCP-server gestopt, adapter hersteld",
+  // ip-conflict
+  "conflict.title": "IP al in gebruik",
+  "conflict.body": "{ip} is al in gebruik door MAC {mac}. Toch toepassen geeft een IP-conflict op het netwerk.",
+  "conflict.confirm": "Toch toepassen",
   // dns
   "dns.toggle": "DNS veranderen",
   "dns.preset": "Preset",
@@ -58,6 +80,7 @@ const nl: Dict = {
   "ping.loss": "Verlies",
   "ping.waiting": "Wachten op data...",
   // automation
+  "auto.autostart": "Starten met Windows",
   "auto.hotkeysOn": "Sneltoetsen aan",
   "auto.toDhcp": "DHCP",
   "auto.toLastStatic": "Statisch",
@@ -75,11 +98,13 @@ const nl: Dict = {
   "about.toolbox": "Online toolbox",
   // generic
   "common.loading": "Laden...",
+  "common.cancel": "Annuleren",
 };
 
 const en: Dict = {
   "tab.adapter": "Adapter",
   "tab.network": "Network",
+  "tab.dhcp": "DHCP",
   "tab.wifi": "WiFi",
   "tab.dns": "DNS",
   "tab.ping": "Ping",
@@ -109,7 +134,26 @@ const en: Dict = {
   "network.copyIp": "Copy IP",
   "network.copied": "Copied",
   "network.pingDevice": "Ping this device",
-  "network.noCurrentIp": "No current IP — switch to DHCP or static first",
+  "network.noCurrentIp": "No current IP - switch to DHCP or static first",
+  "dhcp.server": "DHCP server",
+  "dhcp.serverIp": "Server IP",
+  "dhcp.poolStart": "Pool start",
+  "dhcp.poolSize": "Scope",
+  "dhcp.subnet": "Subnet",
+  "dhcp.leases": "Leases",
+  "dhcp.waiting": "Active on {adapter} - waiting for devices...",
+  "dhcp.hint":
+    "Hands out IP addresses on the selected adapter. For networks without DHCP or a device on a direct cable.",
+  "dhcp.noAdapter": "Pick a network card on the Adapter tab first",
+  "dhcp.warnTitle": "Start DHCP server?",
+  "dhcp.warnBody":
+    "This starts a DHCP server on {adapter}. On an existing network it will hand out wrong IP addresses and can take the whole network down. Only use on an isolated network or a direct cable to a single device.",
+  "dhcp.warnConfirm": "I know the risk, start",
+  "dhcp.started": "DHCP server started",
+  "dhcp.stopped": "DHCP server stopped, adapter restored",
+  "conflict.title": "IP already in use",
+  "conflict.body": "{ip} is already used by MAC {mac}. Applying it anyway causes an IP conflict on the network.",
+  "conflict.confirm": "Apply anyway",
   "dns.toggle": "Change DNS",
   "dns.preset": "Preset",
   "dns.custom": "Custom",
@@ -124,6 +168,7 @@ const en: Dict = {
   "ping.minmax": "Min/Max",
   "ping.loss": "Loss",
   "ping.waiting": "Waiting for data...",
+  "auto.autostart": "Start with Windows",
   "auto.hotkeysOn": "Hotkeys on",
   "auto.toDhcp": "DHCP",
   "auto.toLastStatic": "Static",
@@ -139,6 +184,7 @@ const en: Dict = {
   "about.github": "Source-available in GitHub",
   "about.toolbox": "Online toolbox",
   "common.loading": "Loading...",
+  "common.cancel": "Cancel",
 };
 
 const active: Dict = en;

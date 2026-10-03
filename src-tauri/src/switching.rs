@@ -56,6 +56,30 @@ pub fn capture_current(adapter_name: &str) -> Option<PreviousConfig> {
     })
 }
 
+/// Zet een eerder vastgelegde configuratie terug op zijn adapter. Gebruikt door undo/redo
+/// en door de DHCP-server (herstel bij stoppen). Een statische config zonder gateway
+/// (zoals de DHCP-server die zelf zet) wordt ook zonder gateway hersteld.
+pub fn apply_config(app: &AppHandle, cfg: &PreviousConfig) -> Result<(), String> {
+    crate::tray::update_tooltip(
+        app,
+        &format!("T8-Lan — herstelt config op {}...", cfg.adapter_name),
+    );
+    if cfg.was_dhcp {
+        ip::set_dhcp(&cfg.adapter_name)?;
+        let _ = dns::set_dhcp_dns(&cfg.adapter_name);
+        return Ok(());
+    }
+    match (&cfg.ip, &cfg.subnet, &cfg.gateway) {
+        (Some(ip_addr), Some(subnet), Some(gateway)) => {
+            ip::set_static(&cfg.adapter_name, ip_addr, subnet, gateway)
+        }
+        (Some(ip_addr), Some(subnet), None) => {
+            ip::set_static_no_gateway(&cfg.adapter_name, ip_addr, subnet)
+        }
+        _ => Err("Config onvolledig — kan niet herstellen".into()),
+    }
+}
+
 fn record_undo(app: &AppHandle, adapter_name: &str) {
     if let Some(state) = app.try_state::<Arc<UndoState>>() {
         if let Some(prev) = capture_current(adapter_name) {
@@ -188,35 +212,42 @@ pub fn do_static(app: &AppHandle, adapter_name: &str, ip_addr: &str, trigger: &s
     }
 }
 
-/// Build the tray tooltip text from the current adapter status.
-pub fn tooltip_for_selected(app: &AppHandle) -> String {
+/// Ping-timeout voor de internetcheck in de tray. Ruim genomen: via 4G/hotspots of een
+/// drukke klantrouter zit een DNS-ping geregeld boven de 700 ms, en dat is geen "offline".
+const TRAY_PING_TIMEOUT_MS: u32 = 1500;
+
+/// Tray-status: de tekst (modus + IP van de gekozen adapter) en of de internetcheck
+/// (ping naar de ingestelde DNS, fallback 1.1.1.1) slaagde. De aanroeper bepaalt met
+/// hysterese of het rood wordt; één gemiste ping is nog geen storing.
+pub fn tray_status(app: &AppHandle) -> (String, bool) {
     let s = settings::load(app).unwrap_or_default();
+    let dns_target = {
+        let (p, _) = resolve_dns(&s.dns);
+        if p.is_empty() { "1.1.1.1".to_string() } else { p }
+    };
+    let online = crate::network::ping::ping_once(&dns_target, TRAY_PING_TIMEOUT_MS)
+        .rtt_ms
+        .is_some();
+
     let adapters = match adapter::list_adapters() {
         Ok(a) => a,
-        Err(_) => return "T8-Lan".into(),
+        Err(_) => return ("T8-Lan".into(), online),
     };
     let selected = match &s.selected_adapter {
         Some(r) => adapters.iter().find(|a| a.friendly_name == r.friendly_name),
         None => adapters.iter().find(|a| a.is_up && a.current_ip.is_some()),
     };
-    // Quick internet check: ping the configured DNS (fallback 1.1.1.1).
-    let dns_target = {
-        let (p, _) = resolve_dns(&s.dns);
-        if p.is_empty() { "1.1.1.1".to_string() } else { p }
-    };
-    let online = crate::network::ping::ping_once(&dns_target, 700).rtt_ms.is_some();
-    let dot = if online { " 🟢" } else { " 🔴" };
-
-    match selected {
+    let text = match selected {
         Some(a) => {
             let mode = if a.is_dhcp { "DHCP" } else { "Static" };
             match &a.current_ip {
-                Some(ip) => format!("{mode} {ip}{dot}"),
-                None => format!("{mode} — no IP{dot}"),
+                Some(ip) => format!("{mode} {ip}"),
+                None => format!("{mode} - no IP"),
             }
         }
-        None => format!("no adapter{dot}"),
-    }
+        None => "no adapter".to_string(),
+    };
+    (text, online)
 }
 
 /// Resolve the most recent static IP for the selected adapter (for the static hotkey).

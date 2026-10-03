@@ -5,21 +5,24 @@ import Tabs, { type TabKey } from "./components/Tabs";
 import {
   IconAdapter,
   IconSubnet,
+  IconDhcp,
   IconWifi,
   IconDns,
   IconPing,
   IconAuto,
   IconAbout,
 } from "./components/icons";
+import ConfirmDialog from "./components/ConfirmDialog";
 import AdapterTab from "./tabs/AdapterTab";
 import NetworkTab from "./tabs/NetworkTab";
+import DhcpTab from "./tabs/DhcpTab";
 import WifiTab from "./tabs/WifiTab";
 import DnsTab from "./tabs/DnsTab";
 import PingTab from "./tabs/PingTab";
 import AutomationTab from "./tabs/AutomationTab";
 import AboutTab from "./tabs/AboutTab";
 import { useStore, flash } from "./store";
-import { ipc, dnsPrimary, type SwitchResultEvent } from "./lib/ipc";
+import { ipc, dnsPrimary, type SwitchResultEvent, type DhcpStatus } from "./lib/ipc";
 import { t } from "./lib/i18n";
 
 export default function App() {
@@ -30,10 +33,18 @@ export default function App() {
   const setSettings = useStore((s) => s.setSettings);
   const dnsAlive = useStore((s) => s.dnsAlive);
   const pingRequest = useStore((s) => s.pingRequest);
+  const dhcpRunning = useStore((s) => s.dhcpStatus?.running ?? false);
 
   const TABS = [
     { key: "adapter" as TabKey, label: t("tab.adapter"), icon: <IconAdapter /> },
     { key: "subnet" as TabKey, label: t("tab.network"), icon: <IconSubnet /> },
+    {
+      key: "dhcp" as TabKey,
+      label: t("tab.dhcp"),
+      icon: <IconDhcp />,
+      // Een draaiende DHCP-server is altijd zichtbaar, ook op andere tabs.
+      badge: dhcpRunning ? <span className="tab__dot tab__dot--warn" /> : null,
+    },
     { key: "wifi" as TabKey, label: t("tab.wifi"), icon: <IconWifi /> },
     {
       key: "dns" as TabKey,
@@ -52,6 +63,14 @@ export default function App() {
   useEffect(() => {
     ipc.loadSettings().then(setSettings).catch(console.error);
     ipc.getCurrentStatus().then(setStatus).catch(console.error);
+    // DHCP-serverstatus globaal volgen (badge op de tab, ook als de tab niet open is).
+    ipc.dhcpStatus().then((s) => useStore.getState().setDhcpStatus(s)).catch(() => {});
+    let unlistenDhcp: UnlistenFn | undefined;
+    listen<DhcpStatus>("dhcp-status", (e) => useStore.getState().setDhcpStatus(e.payload)).then(
+      (u) => {
+        unlistenDhcp = u;
+      },
+    );
 
     let unlisten: UnlistenFn | undefined;
     listen<SwitchResultEvent>("switch-result", (event) => {
@@ -65,6 +84,7 @@ export default function App() {
 
     return () => {
       if (unlisten) unlisten();
+      if (unlistenDhcp) unlistenDhcp();
     };
   }, [setSettings, setStatus]);
 
@@ -138,6 +158,7 @@ export default function App() {
           <div key={active} className="tab-panel">
             {active === "adapter" && <AdapterTab />}
             {active === "subnet" && <NetworkTab />}
+            {active === "dhcp" && <DhcpTab />}
             {active === "wifi" && <WifiTab />}
             {active === "dns" && <DnsTab />}
             {active === "ping" && <PingTab />}
@@ -149,6 +170,7 @@ export default function App() {
           <div className={`flashbar flashbar--${flashMsg.kind}`}>{flashMsg.msg}</div>
         )}
       </div>
+      <ConfirmDialog />
     </div>
   );
 }

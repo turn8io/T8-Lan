@@ -35,6 +35,55 @@ pub struct Settings {
     pub ssid_rules: Vec<SsidRule>,
     #[serde(default)]
     pub examples_seeded: bool,
+    /// Automatisch starten bij aanmelden (Taakplanner-taak). Standaard aan: T8-Lan is
+    /// bedoeld als altijd-aanwezige tray-tool.
+    #[serde(default = "default_true")]
+    pub autostart: bool,
+    #[serde(default)]
+    pub dhcp: DhcpSettings,
+}
+
+/// Instellingen van de ingebouwde DHCP-server (tab "DHCP").
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DhcpSettings {
+    /// Statisch IP dat de eigen adapter krijgt zolang de server draait.
+    #[serde(default = "default_dhcp_server_ip")]
+    pub server_ip: String,
+    #[serde(default = "default_subnet")]
+    pub subnet: String,
+    /// Eerste adres van de uitgifte-pool.
+    #[serde(default = "default_dhcp_pool_start")]
+    pub pool_start: String,
+    /// Aantal adressen in de pool (scope).
+    #[serde(default = "default_dhcp_pool_size")]
+    pub pool_size: u32,
+    #[serde(default = "default_dhcp_lease_secs")]
+    pub lease_secs: u32,
+}
+
+impl Default for DhcpSettings {
+    fn default() -> Self {
+        Self {
+            server_ip: default_dhcp_server_ip(),
+            subnet: default_subnet(),
+            pool_start: default_dhcp_pool_start(),
+            pool_size: default_dhcp_pool_size(),
+            lease_secs: default_dhcp_lease_secs(),
+        }
+    }
+}
+
+fn default_dhcp_server_ip() -> String {
+    "192.168.8.8".to_string()
+}
+fn default_dhcp_pool_start() -> String {
+    "192.168.8.100".to_string()
+}
+fn default_dhcp_pool_size() -> u32 {
+    50
+}
+fn default_dhcp_lease_secs() -> u32 {
+    3600
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -144,6 +193,8 @@ impl Default for Settings {
             hotkey_static: default_hotkey_static(),
             ssid_rules: Vec::new(),
             examples_seeded: false,
+            autostart: true,
+            dhcp: DhcpSettings::default(),
         }
     }
 }

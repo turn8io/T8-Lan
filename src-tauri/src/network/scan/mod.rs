@@ -8,6 +8,7 @@
 //! 5555/32000). Daarnaast loopt één Hikvision SADP-multicast voor het hele subnet. Geen
 //! poort-bruteforce, geen credential-tests.
 
+pub mod onvif;
 pub mod oui;
 pub mod probe;
 pub mod sadp;
@@ -23,12 +24,18 @@ use std::time::{Duration, Instant};
 /// Korte timeout voor de TCP-poortchecks (klikbaarheid + camerabevestiging).
 const PORT_TIMEOUT: Duration = Duration::from_millis(400);
 /// Hoe lang we naar SADP-antwoorden (Hikvision) luisteren tijdens de scan.
-const SADP_LISTEN: Duration = Duration::from_secs(2);
+const SADP_LISTEN: Duration = Duration::from_secs(3);
+/// Hoe lang we naar ONVIF WS-Discovery-antwoorden luisteren.
+const ONVIF_LISTEN: Duration = Duration::from_millis(2500);
 /// Veiligheidsplafond voor de ARP-fase. Alle probes vuren tegelijk: levende apparaten
 /// antwoorden binnen milliseconden, lege adressen melden zich pas na de systeem-ARP-timeout
 /// (~1–2 s). We wachten tot álle probes gemeld hebben (of dit plafond), zodat we niets
 /// missen — door de volledige parallelliteit blijft dat ~2 s i.p.v. de oude ~20 s.
 const ARP_MAX_WAIT: Duration = Duration::from_secs(3);
+/// Tweede ARP-ronde voor adressen die in ronde één niet antwoordden. Bij 254 gelijktijdige
+/// broadcasts (zeker via WiFi of een drukke switch) raakt wel eens een request of reply
+/// kwijt; een server die daardoor "ontbrak" wordt in ronde twee alsnog gevonden.
+const ARP_RETRY_WAIT: Duration = Duration::from_secs(2);
 /// Kleine stack voor de korte ARP-probe-threads (we vuren er ~254 tegelijk af).
 const PROBE_STACK: usize = 64 * 1024;
 
@@ -72,51 +79,32 @@ where
 
     let on_event = Arc::new(on_event);
 
-    // Hikvision SADP-discovery draait parallel: de modelinfo (bv. "Hikvision
-    // DS-2CD2143G0-I") stroomt zo vaak al binnen vóór de ARP-fase klaar is.
+    // Hikvision SADP- en ONVIF WS-Discovery draaien parallel: de modelinfo (bv.
+    // "Hikvision DS-2CD2143G0-I") stroomt zo vaak al binnen vóór de ARP-fase klaar is.
     let sadp_handle = {
         let on_event = Arc::clone(&on_event);
         thread::spawn(move || {
             sadp::discover(base, SADP_LISTEN, move |dev| on_event(ScanEvent::Device(dev)));
         })
     };
+    let onvif_handle = {
+        let on_event = Arc::clone(&on_event);
+        thread::spawn(move || {
+            onvif::discover(base, ONVIF_LISTEN, move |dev| on_event(ScanEvent::Device(dev)));
+        })
+    };
 
-    // Vuur álle ARP-probes tegelijk af; antwoorden komen via een channel binnen.
-    let (tx, rx) = mpsc::channel::<(String, Option<String>)>();
-    for ip_addr in candidates {
-        let tx = tx.clone();
-        let _ = thread::Builder::new()
-            .stack_size(PROBE_STACK)
-            .spawn(move || {
-                let mac = ip::check_ip_conflict(&ip_addr, 0).ok().flatten();
-                let _ = tx.send((ip_addr, mac));
-            });
-    }
-    drop(tx);
-
-    // Verzamel antwoorden tot álle probes gemeld hebben (of het plafond); verrijk
-    // gevonden apparaten parallel zodra hun MAC binnen is.
-    let deadline = Instant::now() + ARP_MAX_WAIT;
-    let mut done = 0usize;
+    // Ronde 1: álle ARP-probes tegelijk. Ronde 2: alleen de adressen die niet
+    // antwoordden, als vangnet tegen verloren broadcasts.
     let mut enrich_handles = Vec::new();
-    while done < total {
-        let remaining = match deadline.checked_duration_since(Instant::now()) {
-            Some(r) if !r.is_zero() => r,
-            _ => break,
-        };
-        match rx.recv_timeout(remaining) {
-            Ok((ip_addr, mac)) => {
-                done += 1;
-                on_event(ScanEvent::Progress { done, total });
-                if let Some(mac) = mac {
-                    let on_event = Arc::clone(&on_event);
-                    enrich_handles.push(thread::spawn(move || {
-                        on_event(ScanEvent::Device(enrich(&ip_addr, &mac)));
-                    }));
-                }
-            }
-            Err(_) => break,
-        }
+    let mut done = 0usize;
+    let silent = arp_round(candidates, ARP_MAX_WAIT, &on_event, &mut enrich_handles, |n| {
+        done = n;
+        Some((n, total))
+    });
+    if !silent.is_empty() {
+        // Voortgang blijft op het niveau van ronde 1 staan; ronde 2 is kort.
+        arp_round(silent, ARP_RETRY_WAIT, &on_event, &mut enrich_handles, |_| None);
     }
     // Niet-geantwoorde adressen (leeg) tellen als afgerond voor de voortgangsbalk.
     if done < total {
@@ -127,8 +115,65 @@ where
         let _ = h.join();
     }
     let _ = sadp_handle.join();
+    let _ = onvif_handle.join();
 
     Ok(())
+}
+
+/// Eén ARP-ronde over `targets`: alle probes tegelijk, antwoorden via een channel, tot
+/// alle probes gemeld hebben of `max_wait` verstrijkt. Bezette adressen worden direct
+/// (parallel) verrijkt; `progress(n)` mag een voortgangsmelding teruggeven. Geeft de
+/// adressen terug die (nog) niet antwoordden.
+fn arp_round<F, P>(
+    targets: Vec<String>,
+    max_wait: Duration,
+    on_event: &Arc<F>,
+    enrich_handles: &mut Vec<thread::JoinHandle<()>>,
+    mut progress: P,
+) -> Vec<String>
+where
+    F: Fn(ScanEvent) + Send + Sync + 'static,
+    P: FnMut(usize) -> Option<(usize, usize)>,
+{
+    let total = targets.len();
+    let mut pending: Vec<String> = targets.clone();
+    let (tx, rx) = mpsc::channel::<(String, Option<String>)>();
+    for ip_addr in targets {
+        let tx = tx.clone();
+        let _ = thread::Builder::new()
+            .stack_size(PROBE_STACK)
+            .spawn(move || {
+                let mac = ip::check_ip_conflict(&ip_addr, 0).ok().flatten();
+                let _ = tx.send((ip_addr, mac));
+            });
+    }
+    drop(tx);
+
+    let deadline = Instant::now() + max_wait;
+    let mut done = 0usize;
+    while done < total {
+        let remaining = match deadline.checked_duration_since(Instant::now()) {
+            Some(r) if !r.is_zero() => r,
+            _ => break,
+        };
+        match rx.recv_timeout(remaining) {
+            Ok((ip_addr, mac)) => {
+                done += 1;
+                if let Some((d, t)) = progress(done) {
+                    on_event(ScanEvent::Progress { done: d, total: t });
+                }
+                if let Some(mac) = mac {
+                    pending.retain(|p| p != &ip_addr);
+                    let on_event = Arc::clone(on_event);
+                    enrich_handles.push(thread::spawn(move || {
+                        on_event(ScanEvent::Device(enrich(&ip_addr, &mac)));
+                    }));
+                }
+            }
+            Err(_) => break,
+        }
+    }
+    pending
 }
 
 /// Verrijk een bezet IP met merk/product en een eventuele klikbare webinterface.

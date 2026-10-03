@@ -3,6 +3,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 export type TabKey =
   | "adapter"
   | "subnet"
+  | "dhcp"
   | "wifi"
   | "dns"
   | "ping"

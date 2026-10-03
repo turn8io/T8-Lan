@@ -50,13 +50,30 @@ numerieke volgorde.
 
 ![Netwerkscan met live merk- en apparaatherkenning](screenshots/Netwerk%20Scan.png)
 
-- **Camera's & NVR's**: merk én exact type via MAC-OUI (Hikvision, Dahua, Axis, Bosch,
-  Hanwha, Uniview, …), een **NX-fingerprint** op poort 7001 (Network Optix / Nx Witness)
-  en **Hikvision SADP**-discovery voor het precieze model.
+- **Camera's & NVR's**: merk én exact type via **ONVIF WS-Discovery** (vrijwel elk merk),
+  **Hikvision SADP**, MAC-OUI (Hikvision, Dahua, Axis, Bosch, Hanwha, Uniview, …) en een
+  **NX-fingerprint** op poort 7001 (Network Optix / Nx Witness).
+- Twee ARP-rondes per scan, zodat een apparaat dat één broadcast mist alsnog gevonden wordt.
 - **ATS-alarmpanelen** (Aritech/Carrier): een lichte identify op TCP **32000** leest
   **type, firmware en paneelnaam** uit — alleen bij apparaten die geen camera/NVR zijn.
 - Apparaten met een webinterface krijgen een **geel webicoon** en open je met een klik in
   de browser; per IP is er een knop om het adres te **kopiëren** of direct te **pingen**.
+
+### DHCP-server (nieuw in 0.3)
+
+Voor netwerken zonder DHCP-server, of een apparaat op DHCP dat je met een directe
+(cross)kabel aan je laptop hangt. Eén schakelaar zet de gekozen adapter op **192.168.8.8**
+(zonder gateway, dus je WiFi-internet blijft werken) en deelt adressen uit vanaf
+**192.168.8.100**, standaard een scope van **50**. Server-IP, pool en scope zijn
+aanpasbaar; uitgegeven adressen verschijnen live met MAC, hostnaam en vendor, met knoppen
+om te pingen of te kopiëren.
+
+- Luistert **alleen op de gekozen adapter**: DHCP-verzoeken via WiFi of een andere kaart
+  worden nooit beantwoord.
+- Inschakelen gaat altijd via een **waarschuwing**: in een bestaand netwerk legt een
+  tweede DHCP-server het netwerk plat.
+- Bij uitschakelen (of afsluiten van T8-Lan) krijgt de adapter zijn vorige configuratie
+  terug.
 
 ### Live ping-test
 
@@ -71,8 +88,9 @@ Controleer de bereikbaarheid van elk adres met een continue **2 Hz**-ping (via
 
 - **Linkerklik** opent het venster; **rechterklik** geeft een contextmenu met `DHCP` en de
   laatst gebruikte statische IP's (per adapter) — schakelen zonder het venster te openen.
-- De **hover-tooltip** toont live de modus + het huidige IP, met een **🟢/🔴
-  internet-indicatie** (pingt de ingestelde DNS).
+- Het tray-icoon draagt een **groene/rode stip** als internet-indicatie (pingt de
+  ingestelde DNS, met hysterese tegen flapperen); de **hover-tooltip** toont de modus en
+  het huidige IP.
 - Globale sneltoetsen vanuit elke app: **Ctrl + Alt + D → DHCP** en
   **Ctrl + Alt + S → laatste statische IP**, met een Windows-toast als bevestiging.
 
@@ -90,11 +108,13 @@ Controleer de bereikbaarheid van elk adres met een continue **2 Hz**-ping (via
 
 ### Uiterlijk & installatie
 
-- Klein (220×300), transparant venster met **Mica** (Win11) / **Acrylic** (Win10) en een
-  fijne bewegende gele rand; het onthoudt zijn positie.
+- Klein venster (opent altijd op 220×300, daarna vrij te vergroten) met een fijne
+  bewegende gele rand; het onthoudt zijn positie.
 - **NSIS-installer** (per machine). De app draait met admin-rechten en start via een
-  **Task Scheduler**-taak automatisch bij login — **zonder telkens een UAC-prompt**. Geen
+  **Task Scheduler**-taak automatisch bij login — **zonder telkens een UAC-prompt**, ook op
+  accu en zonder tijdslimiet. Uit te zetten via **Hotkeys → Starten met Windows**. Geen
   bureaublad-snelkoppeling, geen telemetry, geen cloud.
+- **Eén instantie**: een tweede start brengt het bestaande venster naar voren.
 
 ---
 
@@ -107,7 +127,8 @@ geen data wordt verzonden buiten je eigen machine.
 - Geen telemetry, geen analytics, geen calls naar Turn8.io-servers.
 - Settings staan lokaal in `%APPDATA%\io.turn8.t8lan\`.
 - Enige uitgaande verbindingen: jouw eigen ping-/DNS-target, de netwerkscan binnen
-  je eigen subnet, en (eerste install op Win10) de WebView2-bootstrapper.
+  je eigen subnet, de DHCP-server (alleen op de gekozen adapter, alleen als je hem zelf
+  aanzet) en (eerste install op Win10) de WebView2-bootstrapper.
 
 ---
 

@@ -22,10 +22,11 @@ function brandLabel(d: DeviceInfo): string | null {
 /** Apparatenlijst: IP boven, merk/type eronder; rijen gescheiden door een dunne lijn.
  *  Altijd op numerieke IP-volgorde, dus nieuwe vondsten schuiven netjes op hun plek. */
 export default function DeviceList({ devices }: Props) {
+  // Hooks altijd vóór een vroege return (Rules of Hooks).
+  const requestPing = useStore((s) => s.requestPing);
   if (devices.length === 0) return null;
 
   const sorted = [...devices].sort((a, b) => ipKey(a.ip) - ipKey(b.ip));
-  const requestPing = useStore((s) => s.requestPing);
 
   const onCopy = async (ip: string) => {
     try {

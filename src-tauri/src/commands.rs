@@ -1,4 +1,4 @@
-use crate::network::{adapter, ip, ping, wifi, AdapterInfo, CurrentStatus, StatusState};
+use crate::network::{adapter, dhcp, ip, ping, wifi, AdapterInfo, CurrentStatus, StatusState};
 use crate::settings::{self, Settings};
 use crate::switching::{self, PreviousConfig, UndoState};
 use std::str::FromStr;
@@ -129,25 +129,6 @@ pub fn has_redo(state: tauri::State<'_, Arc<UndoState>>) -> Option<PreviousConfi
     state.next.lock().ok().and_then(|g| g.clone())
 }
 
-/// Apply a captured config to its adapter (used by both undo and redo).
-fn apply_config(app: &AppHandle, cfg: &PreviousConfig) -> Result<(), String> {
-    crate::tray::update_tooltip(
-        app,
-        &format!("T8-Lan — herstelt config op {}...", cfg.adapter_name),
-    );
-    if cfg.was_dhcp {
-        crate::network::ip::set_dhcp(&cfg.adapter_name)?;
-        let _ = crate::network::dns::set_dhcp_dns(&cfg.adapter_name);
-    } else if let (Some(ip_addr), Some(subnet), Some(gateway)) =
-        (cfg.ip.clone(), cfg.subnet.clone(), cfg.gateway.clone())
-    {
-        crate::network::ip::set_static(&cfg.adapter_name, &ip_addr, &subnet, &gateway)?;
-    } else {
-        return Err("Config onvolledig — kan niet herstellen".into());
-    }
-    Ok(())
-}
-
 /// Take the config from `from`, capture the current config into `to` (so the move
 /// stays reversible), then apply the taken config. Shared by undo and redo, which
 /// only differ in which slot they pop from and the message when it's empty.
@@ -169,7 +150,7 @@ fn restore_step(
         }
     }
 
-    apply_config(app, &cfg)?;
+    switching::apply_config(app, &cfg)?;
     Ok(cfg)
 }
 
@@ -323,6 +304,62 @@ pub fn open_external(app: AppHandle, url: String) -> Result<(), String> {
     app.opener()
         .open_url(url, None::<&str>)
         .map_err(|e| e.to_string())
+}
+
+// ---- Autostart ----
+
+/// Zet autostart aan/uit: bewaart de instelling én (her)registreert/verwijdert de
+/// Taakplanner-taak. Faalt de taak, dan blijft de instelling toch bewaard zodat de app
+/// het bij de volgende start opnieuw probeert.
+#[tauri::command]
+pub async fn set_autostart(app: AppHandle, enabled: bool) -> Result<(), String> {
+    let mut s = settings::load(&app)?;
+    s.autostart = enabled;
+    settings::save(&app, &s)?;
+    tokio::task::spawn_blocking(move || crate::autostart::apply(enabled))
+        .await
+        .map_err(|e| format!("autostart worker faalt: {e}"))?
+}
+
+#[tauri::command]
+pub fn autostart_registered() -> bool {
+    crate::autostart::is_registered()
+}
+
+// ---- DHCP-server ----
+
+#[tauri::command]
+pub async fn dhcp_start(
+    app: AppHandle,
+    state: tauri::State<'_, Arc<dhcp::DhcpServer>>,
+    adapter_name: String,
+    config: dhcp::DhcpConfig,
+) -> Result<dhcp::DhcpStatus, String> {
+    let server = state.inner().clone();
+    let handle = app.clone();
+    tokio::task::spawn_blocking(move || server.start(&handle, &adapter_name, &config))
+        .await
+        .map_err(|e| format!("dhcp worker faalt: {e}"))??;
+    let _ = crate::tray::rebuild(&app);
+    Ok(state.status())
+}
+
+#[tauri::command]
+pub async fn dhcp_stop(
+    app: AppHandle,
+    state: tauri::State<'_, Arc<dhcp::DhcpServer>>,
+) -> Result<dhcp::DhcpStatus, String> {
+    let server = state.inner().clone();
+    let handle = app.clone();
+    tokio::task::spawn_blocking(move || server.stop(&handle))
+        .await
+        .map_err(|e| format!("dhcp worker faalt: {e}"))??;
+    Ok(state.status())
+}
+
+#[tauri::command]
+pub fn dhcp_status(state: tauri::State<'_, Arc<dhcp::DhcpServer>>) -> dhcp::DhcpStatus {
+    state.status()
 }
 
 #[tauri::command]

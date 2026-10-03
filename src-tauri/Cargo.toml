@@ -8,10 +8,18 @@ rust-version = "1.80"
 # Proprietair, source-available — zie ../LICENSE (geen open source).
 license = "LicenseRef-Turn8-Proprietary"
 publish = false
+default-run = "T8-Lan"
 
 [lib]
 name = "t8_lan_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
+
+# De uitvoerbare heet bewust "T8-Lan.exe" (niet "t8-lan.exe", de packagenaam):
+# zo matchen de installer-hooks (scheduled task, firewallregel, taskkill) en de
+# productnaam exact.
+[[bin]]
+name = "T8-Lan"
+path = "src/main.rs"
 
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
@@ -27,6 +35,8 @@ tauri-plugin-opener = "2"
 tauri-plugin-clipboard-manager = "2"
 tauri-plugin-global-shortcut = "2"
 tauri-plugin-notification = "2"
+# Geen single-instance plugin: dat doen we zelf met een named mutex via de `windows`-crate
+# (src/single_instance.rs), zodat er geen extra dependency bijkomt.
 
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
@@ -51,6 +61,7 @@ features = [
     "Win32_NetworkManagement_Ndis",
     "Win32_NetworkManagement_WiFi",
     "Win32_Networking_WinSock",
+    "Win32_Security",
     "Win32_System_Threading",
     "Win32_UI_WindowsAndMessaging",
     "Win32_Graphics_Gdi",

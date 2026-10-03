@@ -1,4 +1,5 @@
 pub mod adapter;
+pub mod dhcp;
 pub mod dns;
 pub mod ip;
 mod netsh;

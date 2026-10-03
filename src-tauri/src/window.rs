@@ -1,14 +1,38 @@
 use crate::settings::WindowPos;
-use tauri::{PhysicalPosition, WebviewWindow};
+use tauri::{LogicalSize, PhysicalPosition, WebviewWindow};
 
 const EDGE_PADDING: i32 = 12;
 const ASSUMED_TASKBAR_HEIGHT: i32 = 48;
 
+/// Standaardafmeting (logische pixels) waarin het venster altijd opent. Het venster is
+/// daarna vrij te vergroten/verkleinen, maar elke keer dat het (opnieuw) getoond wordt
+/// begint het compact.
+pub const DEFAULT_WIDTH: f64 = 220.0;
+pub const DEFAULT_HEIGHT: f64 = 300.0;
+
+/// Zet het venster terug op de compacte standaardmaat.
+pub fn reset_size(window: &WebviewWindow) {
+    let _ = window.set_size(LogicalSize::new(DEFAULT_WIDTH, DEFAULT_HEIGHT));
+}
+
+/// Standaardmaat in fysieke pixels voor het scherm waar het venster staat. We rekenen
+/// hiermee i.p.v. `outer_size()`, omdat een net gedane `set_size` op Windows pas even
+/// later in `outer_size()` zichtbaar is.
+fn default_physical_size(window: &WebviewWindow) -> (i32, i32) {
+    let scale = window.scale_factor().unwrap_or(1.0);
+    (
+        (DEFAULT_WIDTH * scale).round() as i32,
+        (DEFAULT_HEIGHT * scale).round() as i32,
+    )
+}
+
+/// Opstart-/toonpositie: altijd eerst de compacte maat, dan de onthouden positie (als
+/// die nog op een scherm ligt), anders rechtsonder.
 pub fn position_initial(window: &WebviewWindow, saved: Option<&WindowPos>) {
+    reset_size(window);
     if let Some(pos) = saved {
         if is_within_any_monitor(window, pos) {
-            // Only restore position — size is fixed by the window config (non-resizable).
-            // Restoring a stale saved size would override the configured dimensions.
+            // Alleen de positie herstellen; de maat is net bewust teruggezet.
             let _ = window.set_position(PhysicalPosition::new(pos.x, pos.y));
             return;
         }
@@ -20,17 +44,15 @@ pub fn position_default_bottom_right(window: &WebviewWindow) {
     let Ok(Some(monitor)) = window.primary_monitor() else {
         return;
     };
-    let Ok(window_size) = window.outer_size() else {
-        return;
-    };
+    let (w, h) = default_physical_size(window);
 
     let monitor_size = monitor.size();
     let scale = monitor.scale_factor();
 
     let work_bottom =
         monitor_size.height as i32 - (ASSUMED_TASKBAR_HEIGHT as f64 * scale) as i32;
-    let x = monitor_size.width as i32 - window_size.width as i32 - EDGE_PADDING;
-    let y = work_bottom - window_size.height as i32 - EDGE_PADDING;
+    let x = monitor_size.width as i32 - w - EDGE_PADDING;
+    let y = work_bottom - h - EDGE_PADDING;
 
     let _ = window.set_position(PhysicalPosition::new(x, y));
 }
@@ -40,9 +62,7 @@ pub fn position_default_bottom_right(window: &WebviewWindow) {
 /// The window's bottom edge sits above the click so the content — including the
 /// IP input near the top — is immediately visible and reachable.
 pub fn position_near_point(window: &WebviewWindow, click_x: f64, click_y: f64) {
-    let Ok(window_size) = window.outer_size() else {
-        return;
-    };
+    let (w, h) = default_physical_size(window);
     let cx = click_x as i32;
     let cy = click_y as i32;
 
@@ -50,8 +70,6 @@ pub fn position_near_point(window: &WebviewWindow, click_x: f64, click_y: f64) {
     // overflow flyout, which can be on any screen). Fall back to primary.
     let (mon_x, mon_y, mon_w, mon_h) = monitor_containing(window, cx, cy);
 
-    let w = window_size.width as i32;
-    let h = window_size.height as i32;
     let edge = 4; // flush against the right edge
 
     // Flush to the monitor's right edge.

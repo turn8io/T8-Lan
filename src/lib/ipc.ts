@@ -42,6 +42,23 @@ export const DNS_PRESET_SERVERS: Record<Exclude<DnsPreset, "custom">, [string, s
   quad9: ["9.9.9.9", "149.112.112.112"],
 };
 
+/** Instellingen van de ingebouwde DHCP-server (zelfde velden als backend `DhcpSettings`). */
+export type DhcpConfig = {
+  server_ip: string;
+  subnet: string;
+  pool_start: string;
+  pool_size: number;
+  lease_secs: number;
+};
+
+export const DHCP_DEFAULTS: DhcpConfig = {
+  server_ip: "192.168.8.8",
+  subnet: "255.255.255.0",
+  pool_start: "192.168.8.100",
+  pool_size: 50,
+  lease_secs: 3600,
+};
+
 export type Settings = {
   version: number;
   selected_adapter: { friendly_name: string; luid: number | null } | null;
@@ -62,6 +79,8 @@ export type Settings = {
   hotkey_static: string;
   ssid_rules: SsidRule[];
   examples_seeded: boolean;
+  autostart: boolean;
+  dhcp: DhcpConfig;
 };
 
 export type SsidAction =
@@ -90,6 +109,27 @@ export type DeviceInfo = {
   detail: string | null;
   /** Klikbare webinterface-URL, of null als er geen webpoort open staat. */
   web_url: string | null;
+};
+
+export type DhcpLease = {
+  ip: string;
+  mac: string;
+  hostname: string | null;
+  vendor: string | null;
+  state: "offered" | "bound";
+  since_ms: number;
+  expires_ms: number;
+};
+
+export type DhcpStatus = {
+  running: boolean;
+  adapter: string | null;
+  server_ip: string | null;
+  pool: string | null;
+  /** true zodra de socket op het server-IP luistert (adapter heeft link + IP). */
+  listening: boolean;
+  leases: DhcpLease[];
+  error: string | null;
 };
 
 export const ipc = {
@@ -121,6 +161,12 @@ export const ipc = {
   dnsPing: (target: string) => invoke<PingResult>("dns_ping", { target }),
   openExternal: (url: string) => invoke<void>("open_external", { url }),
   saveWindowPosition: () => invoke<void>("save_window_position"),
+  setAutostart: (enabled: boolean) => invoke<void>("set_autostart", { enabled }),
+  autostartRegistered: () => invoke<boolean>("autostart_registered"),
+  dhcpStart: (adapter_name: string, config: DhcpConfig) =>
+    invoke<DhcpStatus>("dhcp_start", { adapterName: adapter_name, config }),
+  dhcpStop: () => invoke<DhcpStatus>("dhcp_stop"),
+  dhcpStatus: () => invoke<DhcpStatus>("dhcp_status"),
 };
 
 export type PreviousConfig = {

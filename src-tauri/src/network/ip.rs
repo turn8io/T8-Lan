@@ -11,6 +11,19 @@ pub fn set_static(adapter: &str, ip: &str, subnet: &str, gateway: &str) -> Resul
     ])
 }
 
+/// Statisch IP zónder default gateway. Gebruikt door de DHCP-server: de adapter hangt
+/// dan aan een los netwerk of een directe kabel, en mag de internetroute van de pc (via
+/// WiFi of een tweede kaart) niet kapen.
+pub fn set_static_no_gateway(adapter: &str, ip: &str, subnet: &str) -> Result<(), String> {
+    let name = format!("name={adapter}");
+    let addr = format!("addr={ip}");
+    let mask = format!("mask={subnet}");
+    netsh::run(&[
+        "interface", "ipv4", "set", "address",
+        &name, "source=static", &addr, &mask, "gateway=none",
+    ])
+}
+
 pub fn set_dhcp(adapter: &str) -> Result<(), String> {
     let name = format!("name={adapter}");
     netsh::run(&["interface", "ipv4", "set", "address", &name, "source=dhcp"])

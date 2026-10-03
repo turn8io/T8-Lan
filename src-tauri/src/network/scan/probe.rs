@@ -26,10 +26,17 @@ pub fn port_open(ip: &str, port: u16, timeout: Duration) -> bool {
 /// Doet één plain-HTTP `GET /api/moduleInformation` en leest de `Server:`-header.
 /// Geeft bv. `Some("Nx Witness V6.1")` terug, of `None` als het geen NX is.
 pub fn nx_fingerprint(ip: &str) -> Option<String> {
+    // Een drukke NX-server (of een server achter een trage switch) haalt 500 ms soms
+    // niet, zeker midden in de ARP-storm van de scan. Ruimere timeout + één herkansing.
+    nx_fingerprint_once(ip, Duration::from_millis(1000))
+        .or_else(|| nx_fingerprint_once(ip, Duration::from_millis(1500)))
+}
+
+fn nx_fingerprint_once(ip: &str, connect_timeout: Duration) -> Option<String> {
     let addr: SocketAddr = format!("{ip}:{NX_PORT}").parse().ok()?;
-    let mut stream = TcpStream::connect_timeout(&addr, Duration::from_millis(500)).ok()?;
-    stream.set_read_timeout(Some(Duration::from_millis(1200))).ok()?;
-    stream.set_write_timeout(Some(Duration::from_millis(500))).ok()?;
+    let mut stream = TcpStream::connect_timeout(&addr, connect_timeout).ok()?;
+    stream.set_read_timeout(Some(Duration::from_millis(2000))).ok()?;
+    stream.set_write_timeout(Some(Duration::from_millis(800))).ok()?;
 
     let request = format!(
         "GET /api/moduleInformation HTTP/1.0\r\nHost: {ip}\r\nUser-Agent: T8-LAN\r\nConnection: close\r\n\r\n"

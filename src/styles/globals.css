@@ -352,6 +352,21 @@ textarea {
   background: var(--err);
   box-shadow: 0 0 4px var(--err);
 }
+/* DHCP-server actief: gele stip op de DHCP-tab, zichtbaar vanaf elke tab. */
+.tab__dot--warn {
+  background: var(--t8-yellow);
+  box-shadow: 0 0 4px var(--t8-yellow);
+  animation: dot-pulse 1.6s ease-in-out infinite;
+}
+@keyframes dot-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
 
 /* inline variant inside the DNS tab health row */
 .dns-health__dot {
@@ -524,6 +539,104 @@ textarea {
   color: var(--fg-faint);
   line-height: 1.45;
 }
+.hint--err {
+  color: var(--err);
+}
+
+/* ============================================================
+   Modal / bevestigingsdialoog (huisstijl, vervangt window.confirm)
+   ============================================================ */
+
+.modal-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14px;
+  background: rgba(0, 0, 0, 0.62);
+  backdrop-filter: blur(2px);
+  animation: tip-in 120ms var(--ease);
+}
+
+.modal {
+  width: 100%;
+  max-width: 300px;
+  background: linear-gradient(180deg, #16161b 0%, #0f0f12 100%);
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  padding: 10px 11px 11px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  animation: modal-in 150ms var(--ease);
+}
+@keyframes modal-in {
+  from {
+    transform: scale(0.95) translateY(4px);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
+}
+
+.modal--danger {
+  border-color: rgba(239, 68, 68, 0.55);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7), 0 0 18px rgba(239, 68, 68, 0.25);
+}
+
+.modal__head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.modal__icon {
+  flex-shrink: 0;
+  color: var(--err);
+  filter: drop-shadow(0 0 4px rgba(239, 68, 68, 0.6));
+}
+.modal__title {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+}
+.modal--danger .modal__title {
+  color: var(--err);
+}
+.modal__body {
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--fg);
+}
+.modal__actions {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+  margin-top: 2px;
+}
+.modal__actions .btn {
+  padding: 5px 9px;
+}
+
+/* ============================================================
+   DHCP-server tab
+   ============================================================ */
+
+.dhcp-card--running {
+  border-color: rgba(236, 194, 9, 0.45);
+  box-shadow: 0 0 10px rgba(236, 194, 9, 0.12);
+}
+/* Nog niet bevestigd (alleen OFFER): gedimd tot de client het adres accepteert. */
+.device-row--offered .device-ip,
+.device-row--offered .device-brand {
+  opacity: 0.55;
+}
 
 /* ============================================================
    Form primitives (compact)
@@ -629,6 +742,18 @@ textarea {
 .btn--ghost:hover:not(:disabled) {
   background: var(--bg-input-focus);
   border-color: var(--border-strong);
+}
+
+.btn--danger {
+  background: var(--err);
+  color: #fff;
+}
+.btn--danger:hover:not(:disabled) {
+  background: #f87171;
+  box-shadow: 0 0 12px rgba(239, 68, 68, 0.5);
+}
+.btn--danger:active:not(:disabled) {
+  transform: translateY(1px);
 }
 
 .btn--full {
