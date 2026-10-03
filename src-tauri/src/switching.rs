@@ -216,22 +216,21 @@ pub fn do_static(app: &AppHandle, adapter_name: &str, ip_addr: &str, trigger: &s
 /// drukke klantrouter zit een DNS-ping geregeld boven de 700 ms, en dat is geen "offline".
 const TRAY_PING_TIMEOUT_MS: u32 = 1500;
 
-/// Tray-status: de tekst (modus + IP van de gekozen adapter) en of de internetcheck
-/// (ping naar de ingestelde DNS, fallback 1.1.1.1) slaagde. De aanroeper bepaalt met
-/// hysterese of het rood wordt; één gemiste ping is nog geen storing.
-pub fn tray_status(app: &AppHandle) -> (String, bool) {
+/// Tray-status: de tekst (modus + IP van de gekozen adapter) en de responstijd van de
+/// internetcheck (ping naar de ingestelde DNS, fallback 1.1.1.1), `None` bij geen
+/// antwoord. De aanroeper bepaalt met hysterese en recente geschiedenis of het oranje
+/// (wisselvallig) of rood (offline) wordt; één gemiste ping is nog geen storing.
+pub fn tray_status(app: &AppHandle) -> (String, Option<u32>) {
     let s = settings::load(app).unwrap_or_default();
     let dns_target = {
         let (p, _) = resolve_dns(&s.dns);
         if p.is_empty() { "1.1.1.1".to_string() } else { p }
     };
-    let online = crate::network::ping::ping_once(&dns_target, TRAY_PING_TIMEOUT_MS)
-        .rtt_ms
-        .is_some();
+    let rtt = crate::network::ping::ping_once(&dns_target, TRAY_PING_TIMEOUT_MS).rtt_ms;
 
     let adapters = match adapter::list_adapters() {
         Ok(a) => a,
-        Err(_) => return ("T8-Lan".into(), online),
+        Err(_) => return ("T8-Lan".into(), rtt),
     };
     let selected = match &s.selected_adapter {
         Some(r) => adapters.iter().find(|a| a.friendly_name == r.friendly_name),
@@ -247,7 +246,7 @@ pub fn tray_status(app: &AppHandle) -> (String, bool) {
         }
         None => "no adapter".to_string(),
     };
-    (text, online)
+    (text, rtt)
 }
 
 /// Resolve the most recent static IP for the selected adapter (for the static hotkey).

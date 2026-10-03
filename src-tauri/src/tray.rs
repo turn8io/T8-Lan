@@ -10,9 +10,20 @@ use tauri::{
 
 pub const TRAY_ID: &str = "main";
 
-/// Laatst gezette online-stip, zodat we het icoon alleen vervangen als de status wisselt
+/// Verbindingskwaliteit zoals de stip op het tray-icoon die toont.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum LinkState {
+    /// Groen: pings komen vlot terug.
+    Online,
+    /// Oranje: recent een gemiste of trage ping; de verbinding is wisselvallig.
+    Unstable,
+    /// Rood: meerdere gemiste pings op rij.
+    Offline,
+}
+
+/// Laatst gezette stip, zodat we het icoon alleen vervangen als de status wisselt
 /// (elke `set_icon` laat het tray-icoon even knipperen).
-static LAST_BADGE: Mutex<Option<bool>> = Mutex::new(None);
+static LAST_BADGE: Mutex<Option<LinkState>> = Mutex::new(None);
 
 pub fn build(app: &AppHandle) -> tauri::Result<()> {
     let initial_settings = settings::load(app).unwrap_or_default();
@@ -58,14 +69,15 @@ pub fn update_tooltip(app: &AppHandle, text: &str) {
     }
 }
 
-/// Teken een groene (online) of rode (offline) stip rechtsonder op het tray-icoon. Zo is
-/// de internetstatus altijd zichtbaar in de taakbalk, zonder te hoeven hoveren.
-pub fn set_online_badge(app: &AppHandle, online: bool) {
+/// Teken een groene (online), oranje (wisselvallig) of rode (offline) stip rechtsonder op
+/// het tray-icoon. Zo is de verbindingskwaliteit altijd zichtbaar in de taakbalk, zonder
+/// te hoeven hoveren.
+pub fn set_link_badge(app: &AppHandle, state: LinkState) {
     if let Ok(mut last) = LAST_BADGE.lock() {
-        if *last == Some(online) {
+        if *last == Some(state) {
             return;
         }
-        *last = Some(online);
+        *last = Some(state);
     }
     let Some(base) = app.default_window_icon() else {
         return;
@@ -75,7 +87,11 @@ pub fn set_online_badge(app: &AppHandle, online: bool) {
     if rgba.len() != (w as usize) * (h as usize) * 4 {
         return;
     }
-    let color = if online { (74, 222, 128) } else { (239, 68, 68) };
+    let color = match state {
+        LinkState::Online => (74, 222, 128),
+        LinkState::Unstable => (245, 158, 11),
+        LinkState::Offline => (239, 68, 68),
+    };
     draw_badge(&mut rgba, w, h, color);
     if let Some(tray) = app.tray_by_id(TRAY_ID) {
         let _ = tray.set_icon(Some(Image::new(&rgba, w, h)));

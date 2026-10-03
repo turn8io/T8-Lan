@@ -16,9 +16,14 @@ use tauri_plugin_global_shortcut::ShortcutState;
 
 static LAST_MOVE_SAVE: LazyLock<Mutex<Instant>> = LazyLock::new(|| Mutex::new(Instant::now()));
 
-/// Zoveel opeenvolgende gemiste pings voordat de tray op "offline" springt. Eén gemiste
-/// ping komt op 4G of een drukke klantrouter geregeld voor en is nog geen storing.
+/// Zoveel opeenvolgende gemiste pings voordat de tray op "offline" (rood) springt. Eén
+/// gemiste ping komt op 4G of een drukke klantrouter geregeld voor en is nog geen storing.
 const OFFLINE_AFTER_FAILS: u8 = 2;
+/// Zoveel recente metingen (à 3 s) tellen mee voor "wisselvallig" (oranje): één gemiste
+/// ping of een trage ping in dit venster maakt de verbinding verdacht.
+const LINK_HISTORY: usize = 6;
+/// Vanaf deze responstijd (ms) telt een geslaagde ping als "traag".
+const SLOW_RTT_MS: u32 = 400;
 
 pub fn run() {
     let app = tauri::Builder::default()
@@ -104,26 +109,49 @@ pub fn run() {
                 });
             }
 
-            // Tray-status elke 3 s: tooltip "DHCP 192.168.x.x - online" en een groene/rode
-            // stip op het tray-icoon. Met hysterese tegen flapperen.
+            // Tray-status elke 3 s: tooltip "DHCP 192.168.x.x - online (12 ms)" en een
+            // stip op het tray-icoon: groen = goed, oranje = wisselvallig (gemiste of trage
+            // ping in de laatste ~18 s), rood = offline (2 gemiste pings op rij).
             let tip_handle = app.handle().clone();
             tauri::async_runtime::spawn(async move {
                 let mut tick = tokio::time::interval(Duration::from_secs(3));
                 tick.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Delay);
                 let mut fails: u8 = 0;
+                let mut history: std::collections::VecDeque<Option<u32>> =
+                    std::collections::VecDeque::with_capacity(LINK_HISTORY);
                 loop {
                     tick.tick().await;
                     let h = tip_handle.clone();
-                    let Ok((text, ping_ok)) =
+                    let Ok((text, rtt)) =
                         tokio::task::spawn_blocking(move || switching::tray_status(&h)).await
                     else {
                         continue;
                     };
-                    fails = if ping_ok { 0 } else { fails.saturating_add(1) };
-                    let online = fails < OFFLINE_AFTER_FAILS;
-                    let state = if online { "online" } else { "offline" };
-                    tray::update_tooltip(&tip_handle, &format!("T8-Lan: {text} - {state}"));
-                    tray::set_online_badge(&tip_handle, online);
+                    fails = if rtt.is_some() { 0 } else { fails.saturating_add(1) };
+                    if history.len() == LINK_HISTORY {
+                        history.pop_front();
+                    }
+                    history.push_back(rtt);
+                    let shaky = history
+                        .iter()
+                        .any(|r| r.map_or(true, |ms| ms >= SLOW_RTT_MS));
+
+                    let (link, label) = if fails >= OFFLINE_AFTER_FAILS {
+                        (tray::LinkState::Offline, "offline".to_string())
+                    } else if shaky {
+                        let detail = match rtt {
+                            Some(ms) => format!("unstable, {ms} ms"),
+                            None => "unstable, packet loss".to_string(),
+                        };
+                        (tray::LinkState::Unstable, detail)
+                    } else {
+                        (
+                            tray::LinkState::Online,
+                            format!("online, {} ms", rtt.unwrap_or(0)),
+                        )
+                    };
+                    tray::update_tooltip(&tip_handle, &format!("T8-Lan: {text} - {label}"));
+                    tray::set_link_badge(&tip_handle, link);
                 }
             });
 
