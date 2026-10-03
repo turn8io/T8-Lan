@@ -59,6 +59,8 @@ pub fn run() {
             commands::ping_stop,
             commands::dns_ping,
             commands::open_external,
+            commands::get_app_version,
+            commands::show_main_window,
             commands::set_autostart,
             commands::autostart_registered,
             commands::dhcp_start,

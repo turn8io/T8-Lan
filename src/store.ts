@@ -7,14 +7,18 @@ export type SwitchPulse = { kind: "ok" | "err"; at: number } | null;
 export type PingRequest = { ip: string; at: number } | null;
 
 /** Een openstaande bevestigingsvraag (huisstijl-dialoog i.p.v. window.confirm). */
+export type ConfirmChoice = "confirm" | "cancel" | "alt";
+
 export type ConfirmRequest = {
   title: string;
   body: string;
   confirmLabel: string;
   cancelLabel: string;
+  /** Optionele derde keuze (bv. "10 starts niet tonen"); knoppen staan dan onder elkaar. */
+  altLabel?: string;
   /** Rode, "enge" variant voor riskante acties. */
   danger?: boolean;
-  resolve: (ok: boolean) => void;
+  resolve: (choice: ConfirmChoice) => void;
 } | null;
 
 type State = {
@@ -90,9 +94,14 @@ export function flash(msg: string, kind: "ok" | "err" | "warn" = "ok") {
  * Resolvet met true (bevestigd) of false (geannuleerd / Escape / klik buiten).
  */
 export function confirmDialog(opts: Omit<NonNullable<ConfirmRequest>, "resolve">): Promise<boolean> {
+  return askDialog(opts).then((c) => c === "confirm");
+}
+
+/** Als `confirmDialog`, maar geeft de gekozen knop terug (voor dialogen met drie keuzes). */
+export function askDialog(opts: Omit<NonNullable<ConfirmRequest>, "resolve">): Promise<ConfirmChoice> {
   return new Promise((resolve) => {
     const prev = useStore.getState().confirmReq;
-    if (prev) prev.resolve(false);
+    if (prev) prev.resolve("cancel");
     useStore.getState().setConfirmReq({ ...opts, resolve });
   });
 }

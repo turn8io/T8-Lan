@@ -306,6 +306,22 @@ pub fn open_external(app: AppHandle, url: String) -> Result<(), String> {
         .map_err(|e| e.to_string())
 }
 
+// ---- App ----
+
+/// Versie uit tauri.conf.json (één bron van waarheid; de UI en de update-check
+/// gebruiken deze i.p.v. een hardcoded constante).
+#[tauri::command]
+pub fn get_app_version(app: AppHandle) -> String {
+    app.package_info().version.to_string()
+}
+
+/// Toon het hoofdvenster (bv. voor de update-melding terwijl de app verborgen in het
+/// systeemvak draait), met dezelfde positionering als een tray-klik.
+#[tauri::command]
+pub fn show_main_window(app: AppHandle) {
+    crate::tray::show_main(&app, None);
+}
+
 // ---- Autostart ----
 
 /// Zet autostart aan/uit: bewaart de instelling én (her)registreert/verwijdert de

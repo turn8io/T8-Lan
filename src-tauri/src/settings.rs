@@ -44,6 +44,12 @@ pub struct Settings {
     /// UI-taal: "auto" (Windows-weergavetaal) of een vaste code (nl, en, de, fr, it, es).
     #[serde(default = "default_language")]
     pub language: String,
+    /// Update-melding: versie waarvoor de gebruiker "10 starts niet tonen" koos, en het
+    /// resterende aantal starts. Een nieuwere versie dan de gesnoozede reset dit.
+    #[serde(default)]
+    pub update_snooze_version: Option<String>,
+    #[serde(default)]
+    pub update_snooze_remaining: u32,
 }
 
 fn default_language() -> String {
@@ -203,6 +209,8 @@ impl Default for Settings {
             autostart: true,
             dhcp: DhcpSettings::default(),
             language: default_language(),
+            update_snooze_version: None,
+            update_snooze_remaining: 0,
         }
     }
 }

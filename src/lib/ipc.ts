@@ -83,6 +83,8 @@ export type Settings = {
   dhcp: DhcpConfig;
   /** "auto" = taal van Windows; anders een vaste taalcode. */
   language: "auto" | "nl" | "en" | "de" | "fr" | "it" | "es";
+  update_snooze_version: string | null;
+  update_snooze_remaining: number;
 };
 
 export type SsidAction =
@@ -169,6 +171,8 @@ export const ipc = {
     invoke<DhcpStatus>("dhcp_start", { adapterName: adapter_name, config }),
   dhcpStop: () => invoke<DhcpStatus>("dhcp_stop"),
   dhcpStatus: () => invoke<DhcpStatus>("dhcp_status"),
+  getAppVersion: () => invoke<string>("get_app_version"),
+  showMainWindow: () => invoke<void>("show_main_window"),
 };
 
 export type PreviousConfig = {

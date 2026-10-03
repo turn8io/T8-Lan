@@ -111,6 +111,12 @@ const nl = {
   "about.github": "Source-available op GitHub",
   "about.toolbox": "Online toolbox",
   // generic
+  // update-melding
+  "update.title": "Nieuwe versie {version} beschikbaar",
+  "update.generic": "Er staat een nieuwe versie van T8-Lan klaar.",
+  "update.download": "Downloaden",
+  "update.later": "Later",
+  "update.snooze": "{n} starts niet tonen",
   "common.loading": "Laden...",
   "common.cancel": "Annuleren",
 } satisfies Dict;
@@ -200,6 +206,12 @@ const en: Record<TKey, string> = {
   "about.description": "Network toolbox for installers",
   "about.github": "Source-available on GitHub",
   "about.toolbox": "Online toolbox",
+  // update-melding
+  "update.title": "New version {version} available",
+  "update.generic": "A new version of T8-Lan is ready.",
+  "update.download": "Download",
+  "update.later": "Later",
+  "update.snooze": "Hide for {n} starts",
   "common.loading": "Loading...",
   "common.cancel": "Cancel",
 };
@@ -287,6 +299,12 @@ const de: Record<TKey, string> = {
   "about.description": "Netzwerk-Toolbox für Installateure",
   "about.github": "Quellcode einsehbar auf GitHub",
   "about.toolbox": "Online-Toolbox",
+  // update-melding
+  "update.title": "Neue Version {version} verfügbar",
+  "update.generic": "Eine neue Version von T8-Lan steht bereit.",
+  "update.download": "Herunterladen",
+  "update.later": "Später",
+  "update.snooze": "{n} Starts nicht zeigen",
   "common.loading": "Laden...",
   "common.cancel": "Abbrechen",
 };
@@ -374,6 +392,12 @@ const fr: Record<TKey, string> = {
   "about.description": "Boîte à outils réseau pour installateurs",
   "about.github": "Code source consultable sur GitHub",
   "about.toolbox": "Boîte à outils en ligne",
+  // update-melding
+  "update.title": "Nouvelle version {version} disponible",
+  "update.generic": "Une nouvelle version de T8-Lan est prête.",
+  "update.download": "Télécharger",
+  "update.later": "Plus tard",
+  "update.snooze": "Masquer {n} démarrages",
   "common.loading": "Chargement...",
   "common.cancel": "Annuler",
 };
@@ -461,6 +485,12 @@ const it: Record<TKey, string> = {
   "about.description": "Toolbox di rete per installatori",
   "about.github": "Codice consultabile su GitHub",
   "about.toolbox": "Toolbox online",
+  // update-melding
+  "update.title": "Nuova versione {version} disponibile",
+  "update.generic": "È pronta una nuova versione di T8-Lan.",
+  "update.download": "Scarica",
+  "update.later": "Più tardi",
+  "update.snooze": "Nascondi per {n} avvii",
   "common.loading": "Caricamento...",
   "common.cancel": "Annulla",
 };
@@ -548,6 +578,12 @@ const es: Record<TKey, string> = {
   "about.description": "Caja de herramientas de red para instaladores",
   "about.github": "Código consultable en GitHub",
   "about.toolbox": "Caja de herramientas online",
+  // update-melding
+  "update.title": "Nueva versión {version} disponible",
+  "update.generic": "Hay una nueva versión de T8-Lan lista.",
+  "update.download": "Descargar",
+  "update.later": "Más tarde",
+  "update.snooze": "Ocultar {n} inicios",
   "common.loading": "Cargando...",
   "common.cancel": "Cancelar",
 };

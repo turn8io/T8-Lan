@@ -24,6 +24,7 @@ import AboutTab from "./tabs/AboutTab";
 import { useStore, flash } from "./store";
 import { ipc, dnsPrimary, type SwitchResultEvent, type DhcpStatus } from "./lib/ipc";
 import { t, resolveLang, setLanguage } from "./lib/i18n";
+import { scheduleUpdateCheck } from "./lib/update";
 
 export default function App() {
   const [active, setActive] = useState<TabKey>("adapter");
@@ -67,7 +68,13 @@ export default function App() {
   ];
 
   useEffect(() => {
-    ipc.loadSettings().then(setSettings).catch(console.error);
+    ipc
+      .loadSettings()
+      .then((s) => {
+        setSettings(s);
+        scheduleUpdateCheck();
+      })
+      .catch(console.error);
     ipc.getCurrentStatus().then(setStatus).catch(console.error);
     // DHCP-serverstatus globaal volgen (badge op de tab, ook als de tab niet open is).
     ipc.dhcpStatus().then((s) => useStore.getState().setDhcpStatus(s)).catch(() => {});

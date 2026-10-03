@@ -1,13 +1,19 @@
+import { useEffect, useState } from "react";
 import turn8LogoUrl from "../../logo/turn8-logo.svg?url";
 import { ipc } from "../lib/ipc";
 import { t } from "../lib/i18n";
 
-const APP_VERSION = "0.3.0";
 const GITHUB_URL = "https://github.com/turn8io/T8-Lan";
 const SITE_URL = "https://www.turn8.io";
 const TOOLBOX_URL = "https://www.321-test.com";
 
 export default function AboutTab() {
+  // Versie uit tauri.conf.json via de backend: één plek om te verhogen.
+  const [version, setVersion] = useState("");
+  useEffect(() => {
+    ipc.getAppVersion().then(setVersion).catch(() => {});
+  }, []);
+
   return (
     <section className="about">
       <button
@@ -23,7 +29,7 @@ export default function AboutTab() {
       <div className="about__divider" />
 
       <p className="about__line">
-        <strong>T8-Lan</strong> v{APP_VERSION}
+        <strong>T8-Lan</strong> {version ? `v${version}` : ""}
       </p>
       <p className="about__line about__muted">{t("about.description")}</p>
 

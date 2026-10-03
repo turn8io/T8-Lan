@@ -623,6 +623,27 @@ textarea {
 .modal__actions .btn {
   padding: 5px 9px;
 }
+/* drie keuzes: primaire knop over de volle breedte, daaronder de twee andere naast elkaar */
+.modal__actions--stack {
+  flex-direction: column;
+  gap: 5px;
+}
+.modal__actions-row {
+  display: flex;
+  gap: 5px;
+}
+.modal__actions-row .btn {
+  flex: 1;
+  padding-left: 4px;
+  padding-right: 4px;
+  font-size: 10px;
+  white-space: normal;
+  line-height: 1.2;
+}
+.modal__icon--info {
+  color: var(--t8-yellow);
+  filter: drop-shadow(0 0 4px rgba(236, 194, 9, 0.6));
+}
 
 /* ============================================================
    DHCP-server tab

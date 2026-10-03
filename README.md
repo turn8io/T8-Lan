@@ -9,7 +9,7 @@ Ontwikkeld door **Turn8.io** - *improving saves time*.
 
 ## ⬇️ Download
 
-### ▶︎ [Download T8-Lan voor Windows](https://github.com/turn8io/T8-Lan/releases/download/v0.3.0/T8-Lan-v0.3-setup.exe)
+### ▶︎ [Download T8-Lan voor Windows](https://github.com/turn8io/T8-Lan/releases/download/v0.3.1/T8-Lan-v0.3-setup.exe)
 
 Klik op de link hierboven - de installer (`T8-Lan-v0.3-setup.exe`) wordt **meteen
 gedownload**. Dubbelklik en installeer. Klaar - verder hoef je niets met GitHub te doen.
@@ -117,6 +117,8 @@ Controleer de bereikbaarheid van elk adres met een continue **2 Hz**-ping (via
 - **Eén instantie**: een tweede start brengt het bestaande venster naar voren.
 - **Zes talen** (Nederlands, Engels, Duits, Frans, Italiaans, Spaans): volgt standaard de
   Windows-weergavetaal, aan te passen onder **Instellingen**.
+- **Update-melding**: bij het starten kijkt T8-Lan op GitHub of er een nieuwere versie is
+  en toont dan een korte melding met downloadknop. Tijdelijk weg te zetten voor 10 starts.
 
 ---
 
@@ -128,7 +130,8 @@ geen data wordt verzonden buiten je eigen machine.
 
 - Geen telemetry, geen analytics, geen calls naar Turn8.io-servers.
 - Settings staan lokaal in `%APPDATA%\io.turn8.t8lan\`.
-- Enige uitgaande verbindingen: jouw eigen ping-/DNS-target, de netwerkscan binnen
+- Enige uitgaande verbindingen: jouw eigen ping-/DNS-target, de update-check bij het
+  starten (één verzoek aan de GitHub-API, zonder gegevens over jou), de netwerkscan binnen
   je eigen subnet, de DHCP-server (alleen op de gekozen adapter, alleen als je hem zelf
   aanzet) en (eerste install op Win10) de WebView2-bootstrapper.
 
