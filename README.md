@@ -9,9 +9,9 @@ Ontwikkeld door **Turn8.io** - *improving saves time*.
 
 ## ⬇️ Download
 
-### ▶︎ [Download T8-Lan voor Windows](https://github.com/turn8io/T8-Lan/releases/download/v0.3.2/T8-Lan-v0.3-setup.exe)
+### ▶︎ [Download T8-Lan voor Windows](https://github.com/turn8io/T8-Lan/releases/download/v0.4.0/T8-Lan-v0.4-setup.exe)
 
-Klik op de link hierboven - de installer (`T8-Lan-v0.3-setup.exe`) wordt **meteen
+Klik op de link hierboven - de installer (`T8-Lan-v0.4-setup.exe`) wordt **meteen
 gedownload**. Dubbelklik en installeer. Klaar - verder hoef je niets met GitHub te doen.
 Windows 10/11, ruim 1 MB. Geen account, geen telemetry, geen cloud.
 
@@ -59,7 +59,9 @@ numerieke volgorde.
 - Apparaten met een webinterface krijgen een **geel webicoon** en open je met een klik in
   de browser; per IP is er een knop om het adres te **kopiëren** of direct te **pingen**.
 
-### DHCP-server (nieuw in 0.3)
+### DHCP-server en WiFi-hotspot (nieuw in 0.3 en 0.4)
+
+![DHCP-server met WiFi-hotspot en uitgegeven adressen](screenshots/DHCP%20Hotspot.png)
 
 Voor netwerken zonder DHCP-server, of een apparaat op DHCP dat je met een directe
 (cross)kabel aan je laptop hangt. Eén schakelaar zet de gekozen adapter op **192.168.8.8**

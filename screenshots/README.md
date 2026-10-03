@@ -10,6 +10,7 @@ de bestandsnaam coderen als `%20`).
 | `Adapter Settings Static.png` | Adapter-tab met statisch IP (Switch to DHCP) |
 | `Netwerk Scan.png` | Netwerk-tab: live scanresultaat met merk-/camera-/alarmherkenning |
 | `Ping Test.png` | Ping-tab: live grafiek + statistieken |
+| `DHCP Hotspot.png` | DHCP-tab: server actief via de WiFi-hotspot, met uitgegeven adressen |
 
 ## Richtlijnen
 - Formaat **PNG**, donkere achtergrond (zoals de app).
