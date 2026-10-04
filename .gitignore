@@ -38,3 +38,6 @@ pnpm-debug.log*
 
 # Build-output van onze release-stap (vaste-naam installer staat onder target/, al genegeerd)
 *.exe
+
+# Code-signing pakket (Azure Trusted Signing): lokaal, nooit in de publieke repo
+Signing/

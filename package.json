@@ -12,7 +12,8 @@
     "tauri": "tauri",
     "tauri:dev": "tauri dev",
     "tauri:build": "tauri build",
-    "release": "tauri build && powershell -NoProfile -ExecutionPolicy Bypass -File scripts/rename-installer.ps1"
+    "release": "tauri build && powershell -NoProfile -ExecutionPolicy Bypass -File scripts/rename-installer.ps1",
+    "release:signed": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/release-signed.ps1"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.1.1",
