@@ -113,7 +113,7 @@ Controleer de bereikbaarheid van elk adres met een continue **2 Hz**-ping (via
 
 ### Uiterlijk & installatie
 
-- Klein venster (opent altijd op 240×300, daarna vrij te vergroten) met een fijne
+- Klein venster (opent altijd op 240×350, daarna vrij te vergroten) met een fijne
   bewegende gele rand; het onthoudt zijn positie.
 - **NSIS-installer** (per machine). De app draait met admin-rechten en start via een
   **Task Scheduler**-taak automatisch bij login - **zonder telkens een UAC-prompt**, ook op

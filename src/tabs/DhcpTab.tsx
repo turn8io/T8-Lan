@@ -220,7 +220,6 @@ export default function DhcpTab() {
           )}
         </p>
       )}
-      {!running && <p className="hint">{t("dhcp.hint")}</p>}
 
       {/* WiFi-hotspot: eigen netwerk met dezelfde DHCP-instellingen erachter. */}
       <div className="tile">
@@ -239,7 +238,6 @@ export default function DhcpTab() {
         {row("hotspot_ssid", t("dhcp.ssid"), cfg.hotspot_ssid)}
         {row("hotspot_password", t("dhcp.password"), cfg.hotspot_password)}
       </div>
-      {!running && <p className="hint">{t("dhcp.hotspotHint")}</p>}
 
       {leases.length > 0 && (
         <>

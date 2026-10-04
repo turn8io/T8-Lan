@@ -63,8 +63,6 @@ const nl = {
   "dhcp.subnet": "Subnet",
   "dhcp.leases": "Uitgegeven adressen",
   "dhcp.waiting": "Actief op {adapter} - wacht op apparaten...",
-  "dhcp.hint":
-    "Deelt IP-adressen uit op de gekozen adapter. Voor netwerken zonder DHCP of een apparaat aan een directe kabel.",
   "dhcp.noAdapter": "Kies eerst een netwerkkaart op de Adapter-tab",
   "dhcp.warnTitle": "DHCP-server starten?",
   "dhcp.warnBody":
@@ -76,7 +74,6 @@ const nl = {
   "dhcp.hotspot": "WiFi-hotspot",
   "dhcp.ssid": "Netwerknaam",
   "dhcp.password": "Wachtwoord",
-  "dhcp.hotspotHint": "Zet een eigen WiFi-netwerk op met de DHCP-server erachter, zonder internet. Voor camera's en apparaten met WiFi.",
   "dhcp.hotspotStarted": "Hotspot {ssid} actief",
   "dhcp.hotspotStopped": "Hotspot gestopt",
   "dhcp.passwordShort": "Wachtwoord moet 8 t/m 63 tekens zijn",
@@ -172,8 +169,6 @@ const en: Record<TKey, string> = {
   "dhcp.subnet": "Subnet",
   "dhcp.leases": "Leases",
   "dhcp.waiting": "Active on {adapter} - waiting for devices...",
-  "dhcp.hint":
-    "Hands out IP addresses on the selected adapter. For networks without DHCP or a device on a direct cable.",
   "dhcp.noAdapter": "Pick a network card on the Adapter tab first",
   "dhcp.warnTitle": "Start DHCP server?",
   "dhcp.warnBody":
@@ -184,7 +179,6 @@ const en: Record<TKey, string> = {
   "dhcp.hotspot": "WiFi hotspot",
   "dhcp.ssid": "Network name",
   "dhcp.password": "Password",
-  "dhcp.hotspotHint": "Create your own WiFi network with the DHCP server behind it, no internet. For cameras and devices with WiFi.",
   "dhcp.hotspotStarted": "Hotspot {ssid} active",
   "dhcp.hotspotStopped": "Hotspot stopped",
   "dhcp.passwordShort": "Password must be 8 to 63 characters",
@@ -273,8 +267,6 @@ const de: Record<TKey, string> = {
   "dhcp.subnet": "Subnetz",
   "dhcp.leases": "Vergebene Adressen",
   "dhcp.waiting": "Aktiv auf {adapter} - warte auf Geräte...",
-  "dhcp.hint":
-    "Vergibt IP-Adressen auf dem gewählten Adapter. Für Netzwerke ohne DHCP oder ein Gerät am Direktkabel.",
   "dhcp.noAdapter": "Zuerst eine Netzwerkkarte im Adapter-Tab wählen",
   "dhcp.warnTitle": "DHCP-Server starten?",
   "dhcp.warnBody":
@@ -285,7 +277,6 @@ const de: Record<TKey, string> = {
   "dhcp.hotspot": "WLAN-Hotspot",
   "dhcp.ssid": "Netzwerkname",
   "dhcp.password": "Passwort",
-  "dhcp.hotspotHint": "Eigenes WLAN mit dem DHCP-Server dahinter, ohne Internet. Für Kameras und Geräte mit WLAN.",
   "dhcp.hotspotStarted": "Hotspot {ssid} aktiv",
   "dhcp.hotspotStopped": "Hotspot gestoppt",
   "dhcp.passwordShort": "Passwort muss 8 bis 63 Zeichen haben",
@@ -374,8 +365,6 @@ const fr: Record<TKey, string> = {
   "dhcp.subnet": "Masque",
   "dhcp.leases": "Adresses attribuées",
   "dhcp.waiting": "Actif sur {adapter} - en attente d'appareils...",
-  "dhcp.hint":
-    "Distribue des adresses IP sur la carte choisie. Pour les réseaux sans DHCP ou un appareil en câble direct.",
   "dhcp.noAdapter": "Choisissez d'abord une carte réseau dans l'onglet Carte",
   "dhcp.warnTitle": "Démarrer le serveur DHCP ?",
   "dhcp.warnBody":
@@ -386,7 +375,6 @@ const fr: Record<TKey, string> = {
   "dhcp.hotspot": "Point d'accès WiFi",
   "dhcp.ssid": "Nom du réseau",
   "dhcp.password": "Mot de passe",
-  "dhcp.hotspotHint": "Crée votre propre réseau WiFi avec le serveur DHCP derrière, sans internet. Pour caméras et appareils WiFi.",
   "dhcp.hotspotStarted": "Point d'accès {ssid} actif",
   "dhcp.hotspotStopped": "Point d'accès arrêté",
   "dhcp.passwordShort": "Le mot de passe doit faire 8 à 63 caractères",
@@ -475,8 +463,6 @@ const it: Record<TKey, string> = {
   "dhcp.subnet": "Subnet",
   "dhcp.leases": "Indirizzi assegnati",
   "dhcp.waiting": "Attivo su {adapter} - in attesa di dispositivi...",
-  "dhcp.hint":
-    "Assegna indirizzi IP sulla scheda scelta. Per reti senza DHCP o un dispositivo con cavo diretto.",
   "dhcp.noAdapter": "Scegli prima una scheda di rete nella scheda Scheda",
   "dhcp.warnTitle": "Avviare il server DHCP?",
   "dhcp.warnBody":
@@ -487,7 +473,6 @@ const it: Record<TKey, string> = {
   "dhcp.hotspot": "Hotspot WiFi",
   "dhcp.ssid": "Nome rete",
   "dhcp.password": "Password",
-  "dhcp.hotspotHint": "Crea una rete WiFi propria con il server DHCP dietro, senza internet. Per telecamere e dispositivi WiFi.",
   "dhcp.hotspotStarted": "Hotspot {ssid} attivo",
   "dhcp.hotspotStopped": "Hotspot fermato",
   "dhcp.passwordShort": "La password deve avere da 8 a 63 caratteri",
@@ -576,8 +561,6 @@ const es: Record<TKey, string> = {
   "dhcp.subnet": "Máscara",
   "dhcp.leases": "Direcciones asignadas",
   "dhcp.waiting": "Activo en {adapter} - esperando dispositivos...",
-  "dhcp.hint":
-    "Reparte direcciones IP en la tarjeta elegida. Para redes sin DHCP o un dispositivo con cable directo.",
   "dhcp.noAdapter": "Elija primero una tarjeta de red en la pestaña Tarjeta",
   "dhcp.warnTitle": "¿Iniciar el servidor DHCP?",
   "dhcp.warnBody":
@@ -588,7 +571,6 @@ const es: Record<TKey, string> = {
   "dhcp.hotspot": "Hotspot WiFi",
   "dhcp.ssid": "Nombre de red",
   "dhcp.password": "Contraseña",
-  "dhcp.hotspotHint": "Crea una red WiFi propia con el servidor DHCP detrás, sin internet. Para cámaras y dispositivos WiFi.",
   "dhcp.hotspotStarted": "Hotspot {ssid} activo",
   "dhcp.hotspotStopped": "Hotspot detenido",
   "dhcp.passwordShort": "La contraseña debe tener de 8 a 63 caracteres",
