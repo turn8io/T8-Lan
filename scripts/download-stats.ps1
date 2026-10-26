@@ -16,7 +16,7 @@
 #>
 [CmdletBinding()]
 param(
-    [string]$Repo = "turn8/T8-LAN",
+    [string]$Repo = "turn8io/T8-Lan",
     [string]$Token = $env:GITHUB_TOKEN
 )
 
