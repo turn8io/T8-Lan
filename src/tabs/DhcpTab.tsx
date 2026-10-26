@@ -1,9 +1,18 @@
 import { useEffect, useState } from "react";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import { useStore, flash, confirmDialog } from "../store";
-import { ipc, isValidIpv4, DHCP_DEFAULTS, type DhcpConfig, type DhcpStatus, type DhcpLease } from "../lib/ipc";
+import {
+  ipc,
+  isValidIpv4,
+  DHCP_DEFAULTS,
+  type DhcpConfig,
+  type DhcpStatus,
+  type DhcpLease,
+  type HotspotCard,
+} from "../lib/ipc";
 import { copyIp } from "../lib/toast";
 import { t } from "../lib/i18n";
+import Select from "../components/Select";
 import Toggle from "../components/Toggle";
 import Tooltip from "../components/Tooltip";
 import { IconCopy, IconPing } from "../components/icons";
@@ -11,6 +20,8 @@ import { IconCopy, IconPing } from "../components/icons";
 /**
  * DHCP-tab: een kleine DHCP-server op de gekozen adapter, voor netwerken zonder DHCP of
  * een apparaat aan een directe kabel. Inschakelen gaat altijd via een waarschuwing.
+ * Daaronder de WiFi-hotspot, waarop dezelfde DHCP-server standaard meedraait maar ook
+ * uit kan (apparaten met een vast IP); de hotspot houdt dan zelf het server-IP.
  */
 export default function DhcpTab() {
   const settings = useStore((s) => s.settings);
@@ -21,9 +32,13 @@ export default function DhcpTab() {
   const [busy, setBusy] = useState(false);
   const [editing, setEditing] = useState<keyof DhcpConfig | null>(null);
   const [draft, setDraft] = useState("");
+  const [cards, setCards] = useState<HotspotCard[]>([]);
 
   const running = dhcp?.running ?? false;
-  const viaHotspot = running && dhcp?.hotspot != null;
+  const hotspotOn = dhcp?.hotspot != null;
+  const viaHotspot = running && hotspotOn;
+  // Zolang er iets draait zijn de velden in gebruik en niet te bewerken.
+  const locked = running || hotspotOn;
   const adapterName = settings?.selected_adapter?.friendly_name ?? null;
   const cfg: DhcpConfig = { ...DHCP_DEFAULTS, ...(settings?.dhcp ?? {}) };
 
@@ -31,6 +46,7 @@ export default function DhcpTab() {
     let cancelled = false;
     let unlisten: UnlistenFn | undefined;
     ipc.dhcpStatus().then((s) => !cancelled && setDhcp(s)).catch(() => {});
+    ipc.hotspotCards().then((c) => !cancelled && setCards(c)).catch(() => {});
     listen<DhcpStatus>("dhcp-status", (e) => {
       if (!cancelled) setDhcp(e.payload);
     }).then((u) => {
@@ -87,7 +103,26 @@ export default function DhcpTab() {
     }
   };
 
-  // Hotspot: eigen WiFi-netwerk (Wi-Fi Direct) met de DHCP-server op de virtuele adapter.
+  // Op de hotspot is de DHCP-server een keuze: standaard mee, maar uit te zetten voor
+  // apparaten met een vast IP. Geïsoleerd netwerk, dus geen waarschuwing; de keuze wordt
+  // onthouden voor de volgende start.
+  const toggleDhcpOnHotspot = async () => {
+    const hotspotAdapter = dhcp?.hotspot?.adapter;
+    if (!hotspotAdapter) return;
+    setBusy(true);
+    try {
+      const s = running ? await ipc.dhcpStop() : await ipc.dhcpStart(hotspotAdapter, cfg);
+      setDhcp(s);
+      await persist({ ...cfg, hotspot_dhcp: !running });
+      flash(t(running ? "dhcp.stopped" : "dhcp.started"), "ok");
+    } catch (e) {
+      flash(String(e), "err");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  // Hotspot: eigen WiFi-netwerk met (standaard) de DHCP-server op de virtuele adapter.
   // Geïsoleerd netwerk, dus geen "enge" waarschuwing nodig.
   const startHotspot = async () => {
     if (cfg.hotspot_password.length < 8 || cfg.hotspot_password.length > 63) {
@@ -96,9 +131,31 @@ export default function DhcpTab() {
     }
     setBusy(true);
     try {
-      const s = await ipc.hotspotStart(cfg.hotspot_ssid, cfg.hotspot_password, cfg);
+      const s = await ipc.hotspotStart(
+        cfg.hotspot_ssid,
+        cfg.hotspot_password,
+        cfg.hotspot_adapter,
+        cfg.hotspot_dhcp,
+        cfg.hotspot_internet,
+        cfg,
+      );
       setDhcp(s);
       flash(t("dhcp.hotspotStarted").replace("{ssid}", cfg.hotspot_ssid), "ok");
+    } catch (e) {
+      flash(String(e), "err");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  // Internet delen mag ook terwijl de hotspot draait: NAT gaat direct aan of uit, en de
+  // DNS-servers deelt de DHCP-server altijd al uit. De keuze wordt onthouden.
+  const toggleInternet = async () => {
+    const next = !cfg.hotspot_internet;
+    setBusy(true);
+    try {
+      if (hotspotOn) setDhcp(await ipc.hotspotSetInternet(next));
+      await persist({ ...cfg, hotspot_internet: next });
     } catch (e) {
       flash(String(e), "err");
     } finally {
@@ -120,7 +177,7 @@ export default function DhcpTab() {
   };
 
   const beginEdit = (key: keyof DhcpConfig) => {
-    if (running) return;
+    if (locked) return;
     setDraft(String(cfg[key]));
     setEditing(key);
   };
@@ -156,6 +213,17 @@ export default function DhcpTab() {
   const poolEnd = poolEndOf(cfg.pool_start, cfg.pool_size);
   const leases = dhcp?.leases ?? [];
 
+  // Kaartkeuze: "" is Automatisch (Windows kiest). Een opgeslagen kaart die nu ontbreekt
+  // (USB-stick eruit) blijft zichtbaar, gemarkeerd als down, zodat de keuze niet stil verdwijnt.
+  const chosenCard = cfg.hotspot_adapter;
+  const cardOptions = [
+    { value: "", label: t("dhcp.cardAuto") },
+    ...cards.map((c) => ({ value: c.friendly_name, label: c.friendly_name })),
+  ];
+  if (chosenCard && !cards.some((c) => c.friendly_name === chosenCard)) {
+    cardOptions.push({ value: chosenCard, label: `${chosenCard} ${t("adapter.down")}` });
+  }
+
   const row = (key: keyof DhcpConfig, label: string, shown: string) => (
     <div className="status-card__row">
       <span className="status-line__key">{label}</span>
@@ -175,8 +243,8 @@ export default function DhcpTab() {
       ) : (
         <button
           type="button"
-          className={`status-edit-val mono ${running ? "" : "status-edit-val--edit"}`}
-          disabled={running}
+          className={`status-edit-val mono ${locked ? "" : "status-edit-val--edit"}`}
+          disabled={locked}
           onClick={() => beginEdit(key)}
         >
           {shown}
@@ -197,9 +265,9 @@ export default function DhcpTab() {
           {t("dhcp.server")}
         </span>
         <Toggle
-          on={running && !viaHotspot}
-          disabled={busy || !settings || viaHotspot}
-          onChange={running ? stop : start}
+          on={running}
+          disabled={busy || !settings}
+          onChange={hotspotOn ? toggleDhcpOnHotspot : running ? stop : start}
           aria-label={t("dhcp.server")}
         />
       </div>
@@ -220,24 +288,47 @@ export default function DhcpTab() {
           )}
         </p>
       )}
+      {hotspotOn && !running && (
+        <p className="hint">{t("dhcp.hotspotNoDhcp").replace("{ip}", cfg.server_ip)}</p>
+      )}
 
       {/* WiFi-hotspot: eigen netwerk met dezelfde DHCP-instellingen erachter. */}
       <div className="tile">
         <span className="tile__label">
-          <span className={`tab__dot dns-health__dot ${viaHotspot ? "tab__dot--ok" : ""}`} />
+          <span className={`tab__dot dns-health__dot ${hotspotOn ? "tab__dot--ok" : ""}`} />
           {t("dhcp.hotspot")}
         </span>
         <Toggle
-          on={viaHotspot}
-          disabled={busy || !settings || (running && !viaHotspot)}
-          onChange={viaHotspot ? stopHotspot : startHotspot}
+          on={hotspotOn}
+          disabled={busy || !settings || (running && !hotspotOn)}
+          onChange={hotspotOn ? stopHotspot : startHotspot}
           aria-label={t("dhcp.hotspot")}
         />
       </div>
-      <div className={`status-card${viaHotspot ? " dhcp-card--running" : ""}`}>
+      <div className={`status-card${hotspotOn ? " dhcp-card--running" : ""}`}>
         {row("hotspot_ssid", t("dhcp.ssid"), cfg.hotspot_ssid)}
         {row("hotspot_password", t("dhcp.password"), cfg.hotspot_password)}
+        <div className="status-card__row">
+          <span className="status-line__key">{t("dhcp.method")}</span>
+          <Select
+            className="dhcp-method"
+            value={chosenCard ?? ""}
+            options={cardOptions}
+            onChange={(v) => persist({ ...cfg, hotspot_adapter: v || null })}
+            disabled={locked}
+          />
+        </div>
+        <div className="status-card__row">
+          <span className="status-line__key">{t("dhcp.internet")}</span>
+          <Toggle
+            on={cfg.hotspot_internet}
+            disabled={busy || !settings}
+            onChange={toggleInternet}
+            aria-label={t("dhcp.internet")}
+          />
+        </div>
       </div>
+      <p className="hint">{t("dhcp.methodHint")}</p>
 
       {leases.length > 0 && (
         <>

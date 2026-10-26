@@ -1,11 +1,11 @@
 use std::ffi::c_void;
 use windows::core::GUID;
-use windows::Win32::Foundation::HANDLE;
+use windows::Win32::Foundation::{BOOL, HANDLE};
 use windows::Win32::NetworkManagement::WiFi::{
-    wlan_intf_opcode_current_connection, wlan_interface_state_connected, WlanCloseHandle,
-    WlanEnumInterfaces, WlanFreeMemory, WlanGetAvailableNetworkList, WlanOpenHandle,
-    WlanQueryInterface, DOT11_SSID, WLAN_AVAILABLE_NETWORK_LIST, WLAN_CONNECTION_ATTRIBUTES,
-    WLAN_INTERFACE_INFO_LIST,
+    wlan_intf_opcode_current_connection, wlan_intf_opcode_hosted_network_capable,
+    wlan_interface_state_connected, WlanCloseHandle, WlanEnumInterfaces, WlanFreeMemory,
+    WlanGetAvailableNetworkList, WlanOpenHandle, WlanQueryInterface, DOT11_SSID,
+    WLAN_AVAILABLE_NETWORK_LIST, WLAN_CONNECTION_ATTRIBUTES, WLAN_INTERFACE_INFO_LIST,
 };
 
 /// WLAN client API-versie (v2; vereist op Windows Vista en nieuwer).
@@ -131,5 +131,41 @@ fn collect_networks(handle: HANDLE, guid: &GUID, out: &mut Vec<String>) {
             }
         }
         WlanFreeMemory(list_ptr as *mut c_void);
+    }
+}
+
+/// GUID's van de WLAN-interfaces waarvan de driver het (afgeschafte) hosted network nog
+/// ondersteunt. Aan de driver zelf gevraagd, niet uit de taalafhankelijke `netsh`-tekst.
+pub fn hosted_network_capable() -> Vec<GUID> {
+    let mut capable = Vec::new();
+    let _ = for_each_interface(|handle, guid| {
+        if query_hosted_capable(handle, guid) {
+            capable.push(*guid);
+        }
+    });
+    capable
+}
+
+fn query_hosted_capable(handle: HANDLE, guid: &GUID) -> bool {
+    let mut data_size = 0u32;
+    let mut data_ptr: *mut c_void = std::ptr::null_mut();
+    let r = unsafe {
+        WlanQueryInterface(
+            handle,
+            guid as *const GUID,
+            wlan_intf_opcode_hosted_network_capable,
+            None,
+            &mut data_size,
+            &mut data_ptr,
+            None,
+        )
+    };
+    if r != 0 || data_ptr.is_null() {
+        return false;
+    }
+    unsafe {
+        let capable = (*(data_ptr as *const BOOL)).as_bool();
+        WlanFreeMemory(data_ptr);
+        capable
     }
 }

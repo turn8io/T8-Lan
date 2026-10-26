@@ -74,6 +74,8 @@ pub fn run() {
             commands::dhcp_status,
             commands::hotspot_start,
             commands::hotspot_stop,
+            commands::hotspot_cards,
+            commands::hotspot_set_internet,
         ])
         .setup(|app| {
             let main_window = app

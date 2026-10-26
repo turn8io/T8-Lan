@@ -313,28 +313,14 @@ textarea {
   z-index: 1;
 }
 
-/* DNS health bar — same design as the active-tab underline, green/red,
-   always shown under the DNS tab. */
-.tab__bar {
-  position: absolute;
-  left: 25%;
-  right: 25%;
-  bottom: -4px;
-  height: 2px;
-  border-radius: 2px 2px 0 0;
-  pointer-events: none;
+/* DNS-gezondheid: het wereldbol-icoon kleurt zelf groen of rood. Bewust geen streep
+   eronder: die leest als de gele actieve-tab-streep. De kleur wint ook van het actieve
+   geel; dat de tab actief is zie je aan achtergrond en streep. */
+.tab[data-tone="ok"] .tab__icon {
+  color: var(--ok);
 }
-.tab__bar--ok {
-  background: var(--ok);
-  box-shadow: 0 0 6px var(--ok);
-}
-.tab__bar--err {
-  background: var(--err);
-  box-shadow: 0 0 6px var(--err);
-}
-/* when the DNS tab is active, show the health colour (not the yellow) */
-.tab[data-active="true"]:has(.tab__bar)::after {
-  display: none;
+.tab[data-tone="err"] .tab__icon {
+  color: var(--err);
 }
 
 /* DNS health dot (top-right of the DNS tab) */
@@ -873,9 +859,31 @@ textarea {
 }
 
 .cselect__label {
+  flex: 1 1 auto;
+  min-width: 0;
+  text-align: left;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* Connection dot in front of an entry (adapter up / down). The ring keeps it
+   visible against both the menu and the highlighted row. */
+.cselect__dot {
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.cselect__dot[data-state="on"] {
+  background: var(--ok);
+  box-shadow: 0 0 0 1px rgba(74, 222, 128, 0.25), 0 0 5px rgba(74, 222, 128, 0.5);
+}
+
+.cselect__dot[data-state="off"] {
+  background: rgba(243, 243, 245, 0.28);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08);
 }
 
 .cselect__menu {
@@ -888,20 +896,30 @@ textarea {
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6);
   z-index: 100;
   overflow-y: auto;
+  /* Don't let a scroll that reaches the end of the list continue into the page
+     behind it: that scroll would close the menu mid-gesture. */
+  overscroll-behavior: contain;
   animation: tip-in 90ms var(--ease);
 }
 
 .cselect__opt {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   width: 100%;
   text-align: left;
   padding: 5px 8px;
   font-size: 11px;
   border-radius: 4px;
   color: var(--fg);
+  transition: background var(--dur-fast) var(--ease);
+}
+
+.cselect__opt-label {
+  min-width: 0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  transition: background var(--dur-fast) var(--ease);
 }
 
 .cselect__opt:hover {
@@ -1498,6 +1516,15 @@ textarea {
 .lang-select {
   width: 118px;
   flex-shrink: 0;
+}
+
+/* Keuzelijst of schakelaar als waarde in een gegevensrij (grid): rechts aangesloten. */
+.dhcp-method {
+  width: 118px;
+  justify-self: end;
+}
+.status-card__row > .toggle {
+  justify-self: end;
 }
 
 .hotkey-input {

@@ -113,7 +113,8 @@ pub fn compute_gateway(ip: &str, subnet: &str, s: &Settings) -> Result<String, S
     Ok(Ipv4Addr::from(network | host).to_string())
 }
 
-fn resolve_dns(dns: &DnsSettings) -> (String, Option<String>) {
+/// Primaire en optionele secundaire DNS volgens de voorkeur in de DNS-tab.
+pub(crate) fn resolve_dns(dns: &DnsSettings) -> (String, Option<String>) {
     match dns.preset {
         DnsPreset::Cloudflare => ("1.1.1.1".into(), Some("1.0.0.1".into())),
         DnsPreset::Google => ("8.8.8.8".into(), Some("8.8.4.4".into())),

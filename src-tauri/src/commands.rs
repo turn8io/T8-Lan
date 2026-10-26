@@ -1,6 +1,7 @@
 use crate::network::{adapter, dhcp, hotspot, ip, ping, wifi, AdapterInfo, CurrentStatus, StatusState};
 use crate::settings::{self, Settings};
 use crate::switching::{self, PreviousConfig, UndoState};
+use std::net::Ipv4Addr;
 use std::str::FromStr;
 use std::sync::{Arc, Mutex};
 use tauri::{AppHandle, Emitter, Manager};
@@ -353,14 +354,27 @@ pub async fn dhcp_start(
 ) -> Result<dhcp::DhcpStatus, String> {
     let server = state.inner().clone();
     let handle = app.clone();
-    tokio::task::spawn_blocking(move || server.start(&handle, &adapter_name, &config, None))
+    let dns = shared_dns(&app);
+    tokio::task::spawn_blocking(move || server.start(&handle, &adapter_name, &config, dns))
         .await
         .map_err(|e| format!("dhcp worker faalt: {e}"))??;
     let _ = crate::tray::rebuild(&app);
     Ok(state.status())
 }
 
-// ---- WiFi-hotspot (Wi-Fi Direct) + DHCP-server op de virtuele adapter ----
+/// DNS-servers die de DHCP-server uitdeelt: altijd de voorkeur uit de DNS-tab, ook zonder
+/// internet-delen. Zonder NAT komen die aanvragen niet verder (geen kwaad), en mét NAT
+/// werkt internet dan meteen, ook voor apparaten die al verbonden waren toen het vinkje
+/// omging. Geen bruikbare voorkeur: leeg, dan deelt de server zijn eigen IP uit.
+fn shared_dns(app: &AppHandle) -> [Option<Ipv4Addr>; 2] {
+    let Ok(s) = settings::load(app) else {
+        return [None, None];
+    };
+    let (primary, secondary) = switching::resolve_dns(&s.dns);
+    [primary.parse().ok(), secondary.and_then(|v| v.parse().ok())]
+}
+
+// ---- WiFi-hotspot + (optioneel) DHCP-server op de virtuele adapter ----
 
 #[tauri::command]
 pub async fn hotspot_start(
@@ -369,6 +383,9 @@ pub async fn hotspot_start(
     hotspot_state: tauri::State<'_, Arc<hotspot::Hotspot>>,
     ssid: String,
     password: String,
+    adapter: Option<String>,
+    with_dhcp: bool,
+    with_internet: bool,
     config: dhcp::DhcpConfig,
 ) -> Result<dhcp::DhcpStatus, String> {
     if dhcp_state.is_running() {
@@ -377,16 +394,52 @@ pub async fn hotspot_start(
     let dhcp_server = dhcp_state.inner().clone();
     let hotspot = hotspot_state.inner().clone();
     let handle = app.clone();
+    let dns = shared_dns(&app);
     tokio::task::spawn_blocking(move || {
-        let info = hotspot.start(&ssid, &password)?;
-        // Windows zet de virtuele adapter op APIPA; even de tijd geven voordat netsh erop
-        // schrijft. Mislukt de DHCP-start, dan de hotspot weer afbreken.
-        std::thread::sleep(std::time::Duration::from_millis(500));
-        if let Err(e) = dhcp_server.start(&handle, &info.adapter, &config, Some(info.clone())) {
-            hotspot.stop();
-            return Err(e);
+        // De hotspot zet zelf het server-IP (en de NAT-regel); de DHCP-server treft het al
+        // aan en laat het bij zijn stop staan, zodat DHCP uit kan terwijl de hotspot doorgaat.
+        let info = hotspot.start(
+            &ssid,
+            &password,
+            adapter.as_deref(),
+            &config.server_ip,
+            &config.subnet,
+            with_internet,
+        )?;
+        dhcp_server.set_hotspot(Some(info.clone()));
+        if with_dhcp {
+            if let Err(e) = dhcp_server.start(&handle, &info.adapter, &config, dns) {
+                dhcp_server.set_hotspot(None);
+                hotspot.stop();
+                return Err(e);
+            }
         }
         Ok(())
+    })
+    .await
+    .map_err(|e| format!("hotspot worker faalt: {e}"))??;
+    Ok(dhcp_state.status())
+}
+
+/// Fysieke WiFi-kaarten waar de hotspot op kan, voor de keuzelijst in de DHCP-tab.
+#[tauri::command]
+pub fn hotspot_cards() -> Vec<hotspot::HotspotCard> {
+    hotspot::cards()
+}
+
+/// Internet delen live aan of uit op de draaiende hotspot (zie `Hotspot::set_internet`).
+#[tauri::command]
+pub async fn hotspot_set_internet(
+    dhcp_state: tauri::State<'_, Arc<dhcp::DhcpServer>>,
+    hotspot_state: tauri::State<'_, Arc<hotspot::Hotspot>>,
+    enabled: bool,
+) -> Result<dhcp::DhcpStatus, String> {
+    let dhcp_server = dhcp_state.inner().clone();
+    let hotspot = hotspot_state.inner().clone();
+    tokio::task::spawn_blocking(move || {
+        hotspot.set_internet(enabled)?;
+        dhcp_server.set_hotspot(hotspot.info());
+        Ok::<(), String>(())
     })
     .await
     .map_err(|e| format!("hotspot worker faalt: {e}"))??;
@@ -403,6 +456,8 @@ pub async fn hotspot_stop(
     let hotspot = hotspot_state.inner().clone();
     let handle = app.clone();
     tokio::task::spawn_blocking(move || {
+        // Eerst vergeten, dan stoppen: zo klopt het statusevent dat `stop` uitstuurt meteen.
+        dhcp_server.set_hotspot(None);
         let r = dhcp_server.stop(&handle);
         hotspot.stop();
         r

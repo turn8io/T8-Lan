@@ -66,6 +66,12 @@ pub fn list_adapters() -> Result<Vec<AdapterInfo>, String> {
         }
 
         let luid: u64 = unsafe { adapter.Luid.Value };
+        let mac_len = (adapter.PhysicalAddressLength as usize).min(adapter.PhysicalAddress.len());
+        let mac = adapter.PhysicalAddress[..mac_len]
+            .iter()
+            .map(|b| format!("{b:02x}"))
+            .collect::<Vec<_>>()
+            .join(":");
         let is_up = adapter.OperStatus.0 == IF_OPER_STATUS_UP;
 
         let is_dhcp = adapter.Dhcpv4Server.iSockaddrLength > 0
@@ -79,6 +85,7 @@ pub fn list_adapters() -> Result<Vec<AdapterInfo>, String> {
             friendly_name,
             description,
             luid,
+            mac,
             kind,
             is_up,
             is_dhcp,

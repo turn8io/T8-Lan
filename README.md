@@ -9,9 +9,9 @@ Ontwikkeld door **Turn8.io** - *improving saves time*.
 
 ## ⬇️ Download
 
-### ▶︎ [Download T8-Lan voor Windows](https://github.com/turn8io/T8-Lan/releases/download/v0.4.0/T8-Lan-v0.4-setup.exe)
+### ▶︎ [Download T8-Lan voor Windows](https://github.com/turn8io/T8-Lan/releases/download/v0.5.0/T8-Lan-v0.5-setup.exe)
 
-Klik op de link hierboven - de installer (`T8-Lan-v0.4-setup.exe`) wordt **meteen
+Klik op de link hierboven - de installer (`T8-Lan-v0.5-setup.exe`) wordt **meteen
 gedownload**. Dubbelklik en installeer. Klaar - verder hoef je niets met GitHub te doen.
 Windows 10/11, ruim 1 MB. Geen account, geen telemetry, geen cloud.
 
@@ -59,7 +59,7 @@ numerieke volgorde.
 - Apparaten met een webinterface krijgen een **geel webicoon** en open je met een klik in
   de browser; per IP is er een knop om het adres te **kopiëren** of direct te **pingen**.
 
-### DHCP-server en WiFi-hotspot (nieuw in 0.3 en 0.4)
+### DHCP-server en WiFi-hotspot (nieuw in 0.3 en 0.4, methodekeuze in 0.5)
 
 ![DHCP-server met WiFi-hotspot en uitgegeven adressen](screenshots/DHCP%20Hotspot.png)
 
@@ -77,8 +77,22 @@ om te pingen of te kopiëren.
 - Bij uitschakelen (of afsluiten van T8-Lan) krijgt de adapter zijn vorige configuratie
   terug.
 - **WiFi-hotspot**: dezelfde DHCP-server achter een eigen WiFi-netwerk (naam en
-  wachtwoord instelbaar), via Wi-Fi Direct. Geen internet-delen, geen 192.168.137.x van
-  Windows: gewoon ons eigen 192.168.8.x. Werkt op vrijwel elke laptop met Wi-Fi Direct.
+  wachtwoord instelbaar, standaard `T8-Lan` / `T8online`). Geen internet-delen, geen
+  192.168.137.x van Windows: gewoon ons eigen 192.168.8.x. Je kiest de **WiFi-kaart**;
+  de app zoekt er zelf de techniek bij, want Windows laat de kaart niet rechtstreeks kiezen:
+  - **Wi-Fi Direct**: werkt op vrijwel elke ingebouwde kaart sinds Windows 10.
+  - **Hosted network**: de oude `netsh`-route. Door Microsoft afgeschaft en op moderne
+    ingebouwde chips verdwenen, maar door veel USB-WiFi-adapters nog ondersteund.
+
+  Na de start controleert de app aan het MAC-adres of de hotspot echt op de gekozen kaart
+  staat; zo niet, dan probeert hij de andere techniek, en anders krijg je één duidelijke
+  melding in plaats van stilletjes de verkeerde kaart. De DHCP-server draait standaard mee
+  op de hotspot, maar is met de DHCP-schakelaar uit te zetten voor apparaten met een vast
+  IP; de hotspot houdt dan zelf zijn 192.168.8.8 en geeft dat bij uitschakelen weer vrij.
+- **Internet delen** (vinkje, standaard uit, ook live te wisselen): de hotspot krijgt een
+  WinNAT-regel naar de internetverbinding van de pc. De DHCP-server deelt altijd de
+  DNS-servers uit je DNS-tab uit, dus ook apparaten die al verbonden zijn hebben meteen
+  internet. Geen ICS en geen 192.168.137.x: het blijft ons eigen 192.168.8.x.
 
 ### Live ping-test
 

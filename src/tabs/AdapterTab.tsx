@@ -135,10 +135,21 @@ export default function AdapterTab() {
     await ipc.saveSettings(next).catch(console.error);
   };
 
-  const adapterOptions = adapters.map((a) => ({
-    value: a.friendly_name,
-    label: `${a.kind === "wifi" ? "📶" : "🔌"} ${a.friendly_name}${a.is_up ? "" : ` ${t("adapter.down")}`}`,
-  }));
+  // Connected adapters first (nearly always the one you want), keeping the
+  // original order within each group because Array.sort is stable. The dot
+  // repeats the state in color so it reads at a glance; the "(down)" text
+  // stays as the readable fallback.
+  const adapterOptions = useMemo(
+    () =>
+      [...adapters]
+        .sort((a, b) => Number(b.is_up) - Number(a.is_up))
+        .map((a) => ({
+          value: a.friendly_name,
+          label: `${a.kind === "wifi" ? "📶" : "🔌"} ${a.friendly_name}${a.is_up ? "" : ` ${t("adapter.down")}`}`,
+          dot: a.is_up ? ("on" as const) : ("off" as const),
+        })),
+    [adapters],
+  );
 
   const onSelectAdapter = async (friendlyName: string) => {
     if (!settings) return;
@@ -284,6 +295,7 @@ export default function AdapterTab() {
         <span className="tile__label">{t("adapter.card")}</span>
         <div className="tile__control">
           <Select
+            wide
             value={selectedName ?? ""}
             options={adapterOptions}
             onChange={onSelectAdapter}

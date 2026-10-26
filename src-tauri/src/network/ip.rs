@@ -29,6 +29,24 @@ pub fn set_dhcp(adapter: &str) -> Result<(), String> {
     netsh::run(&["interface", "ipv4", "set", "address", &name, "source=dhcp"])
 }
 
+/// Zet `ip` statisch op `adapter`, maar maak het adres eerst vrij als een slapende adapter
+/// het nog vasthoudt. Windows bewaart de IP-configuratie van een virtuele hotspot-adapter
+/// ook nadat die verdwenen is; na een crash of hard afsluiten staat het server-IP dan nog
+/// op de oude adapter en weigert `set address` met "het object bestaat al". Een adapter
+/// die UP is en het adres heeft is wel een echte botsing: dan een duidelijke fout.
+pub fn claim_static_no_gateway(adapter: &str, ip: &str, subnet: &str) -> Result<(), String> {
+    let holders = super::adapter::list_adapters()?
+        .into_iter()
+        .filter(|a| a.friendly_name != adapter && a.current_ip.as_deref() == Some(ip));
+    for other in holders {
+        if other.is_up {
+            return Err(format!("{ip} is al in gebruik op '{}'", other.friendly_name));
+        }
+        set_dhcp(&other.friendly_name)?;
+    }
+    set_static_no_gateway(adapter, ip, subnet)
+}
+
 pub fn check_ip_conflict(ip: &str, _timeout_ms: u32) -> Result<Option<String>, String> {
     use std::net::Ipv4Addr;
     use windows::Win32::NetworkManagement::IpHelper::SendARP;

@@ -12,6 +12,7 @@ export type AdapterInfo = {
   friendly_name: string;
   description: string;
   luid: number;
+  mac: string;
   kind: AdapterKind;
   is_up: boolean;
   is_dhcp: boolean;
@@ -42,6 +43,12 @@ export const DNS_PRESET_SERVERS: Record<Exclude<DnsPreset, "custom">, [string, s
   quad9: ["9.9.9.9", "149.112.112.112"],
 };
 
+/** Techniek waarmee de hotspot uiteindelijk is opgezet; de app kiest die zelf per kaart. */
+export type HotspotMethod = "wifi-direct" | "hosted-network";
+
+/** Fysieke WiFi-kaart waar de hotspot op kan (backend `hotspot::cards`). */
+export type HotspotCard = { friendly_name: string; description: string; hosted_capable: boolean };
+
 /** Instellingen van de ingebouwde DHCP-server (zelfde velden als backend `DhcpSettings`). */
 export type DhcpConfig = {
   server_ip: string;
@@ -49,9 +56,15 @@ export type DhcpConfig = {
   pool_start: string;
   pool_size: number;
   lease_secs: number;
-  /** WiFi-hotspot (Wi-Fi Direct) met de DHCP-server erachter. */
+  /** WiFi-hotspot met de DHCP-server erachter. */
   hotspot_ssid: string;
   hotspot_password: string;
+  /** Friendly name van de gekozen WiFi-kaart; null laat Windows kiezen. */
+  hotspot_adapter: string | null;
+  /** DHCP-server meedraaien op de hotspot (uit: apparaten met een vast IP). */
+  hotspot_dhcp: boolean;
+  /** Internet delen via de hotspot (NAT naar de internetverbinding van de pc). */
+  hotspot_internet: boolean;
 };
 
 export const DHCP_DEFAULTS: DhcpConfig = {
@@ -61,10 +74,21 @@ export const DHCP_DEFAULTS: DhcpConfig = {
   pool_size: 50,
   lease_secs: 3600,
   hotspot_ssid: "T8-Lan",
-  hotspot_password: "turn8-lan",
+  hotspot_password: "T8online",
+  hotspot_adapter: null,
+  hotspot_dhcp: true,
+  hotspot_internet: false,
 };
 
-export type HotspotInfo = { ssid: string; adapter: string };
+export type HotspotInfo = {
+  ssid: string;
+  adapter: string;
+  method: HotspotMethod;
+  server_ip: string;
+  subnet: string;
+  /** Internet delen staat aan (NAT actief). */
+  internet: boolean;
+};
 
 export type Settings = {
   version: number;
@@ -180,9 +204,19 @@ export const ipc = {
     invoke<DhcpStatus>("dhcp_start", { adapterName: adapter_name, config }),
   dhcpStop: () => invoke<DhcpStatus>("dhcp_stop"),
   dhcpStatus: () => invoke<DhcpStatus>("dhcp_status"),
-  hotspotStart: (ssid: string, password: string, config: DhcpConfig) =>
-    invoke<DhcpStatus>("hotspot_start", { ssid, password, config }),
+  hotspotStart: (
+    ssid: string,
+    password: string,
+    adapter: string | null,
+    withDhcp: boolean,
+    withInternet: boolean,
+    config: DhcpConfig,
+  ) =>
+    invoke<DhcpStatus>("hotspot_start", { ssid, password, adapter, withDhcp, withInternet, config }),
   hotspotStop: () => invoke<DhcpStatus>("hotspot_stop"),
+  hotspotCards: () => invoke<HotspotCard[]>("hotspot_cards"),
+  hotspotSetInternet: (enabled: boolean) =>
+    invoke<DhcpStatus>("hotspot_set_internet", { enabled }),
   getAppVersion: () => invoke<string>("get_app_version"),
   showMainWindow: () => invoke<void>("show_main_window"),
 };

@@ -57,10 +57,7 @@ export default function App() {
       key: "dns" as TabKey,
       label: t("tab.dns"),
       icon: <IconDns />,
-      badge:
-        dnsAlive === null ? null : (
-          <span className={`tab__bar ${dnsAlive ? "tab__bar--ok" : "tab__bar--err"}`} />
-        ),
+      tone: dnsAlive === null ? undefined : dnsAlive ? ("ok" as const) : ("err" as const),
     },
     { key: "ping" as TabKey, label: t("tab.ping"), icon: <IconPing /> },
     { key: "automation" as TabKey, label: t("tab.settings"), icon: <IconSettings /> },

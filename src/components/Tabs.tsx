@@ -10,7 +10,14 @@ export type TabKey =
   | "automation"
   | "about";
 
-type TabDef = { key: TabKey; label: string; icon: ReactNode; badge?: ReactNode };
+type TabDef = {
+  key: TabKey;
+  label: string;
+  icon: ReactNode;
+  badge?: ReactNode;
+  /** Kleurt het icoon zelf groen of rood (gezondheid), los van actief/inactief. */
+  tone?: "ok" | "err";
+};
 
 type Props = {
   tabs: TabDef[];
@@ -60,6 +67,7 @@ export default function Tabs({ tabs, active, onChange }: Props) {
           aria-label={t.label}
           className="tab"
           data-active={active === t.key}
+          data-tone={t.tone}
           onMouseEnter={() => onEnter(t.key)}
           onMouseLeave={onLeave}
           onClick={() => {

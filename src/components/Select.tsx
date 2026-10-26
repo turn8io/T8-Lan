@@ -1,7 +1,12 @@
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from "react";
 import { createPortal } from "react-dom";
 
-export type SelectOption = { value: string; label: string };
+export type SelectOption = {
+  value: string;
+  label: string;
+  /** Optional connection dot drawn in front of the label (green = up). */
+  dot?: "on" | "off";
+};
 
 type Props = {
   value: string;
@@ -10,6 +15,11 @@ type Props = {
   placeholder?: string;
   disabled?: boolean;
   className?: string;
+  /**
+   * Draw the menu twice the trigger width (clamped to the window) so long
+   * entries such as adapter names stay readable in the narrow main window.
+   */
+  wide?: boolean;
 };
 
 /**
@@ -25,6 +35,7 @@ export default function Select({
   placeholder,
   disabled,
   className,
+  wide,
 }: Props) {
   const [open, setOpen] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -39,16 +50,20 @@ export default function Select({
     const menuH = Math.min(options.length * 28 + 8, 200);
     const below = window.innerHeight - rect.bottom;
     const openUp = below < menuH + 8 && rect.top > below;
+    // A wide menu may be broader than the window itself, so clamp it and pull
+    // it back inside when the trigger sits near the right edge.
+    const width = Math.min(wide ? rect.width * 2 : rect.width, window.innerWidth - 8);
+    const left = Math.max(4, Math.min(rect.left, window.innerWidth - width - 4));
     setMenuStyle({
       position: "fixed",
-      left: rect.left,
-      width: rect.width,
+      left,
+      width,
       ...(openUp
         ? { bottom: window.innerHeight - rect.top + 4 }
         : { top: rect.bottom + 4 }),
       maxHeight: menuH,
     });
-  }, [open, options.length]);
+  }, [open, options.length, wide]);
 
   useEffect(() => {
     if (!open) return;
@@ -62,7 +77,15 @@ export default function Select({
       )
         setOpen(false);
     };
-    const onScroll = () => setOpen(false);
+    // Close when the page behind the menu scrolls, because the menu is
+    // position:fixed and would drift away from its trigger. Scrolling INSIDE
+    // the menu is how you reach the rest of a long list, so ignore that; the
+    // capturing listener sees those events too.
+    const onScroll = (e: Event) => {
+      const t = e.target as Node | null;
+      if (t && menuRef.current?.contains(t)) return;
+      setOpen(false);
+    };
     document.addEventListener("mousedown", onDoc);
     window.addEventListener("scroll", onScroll, true);
     return () => {
@@ -80,7 +103,8 @@ export default function Select({
         onClick={() => setOpen((o) => !o)}
         data-open={open}
       >
-        <span className="cselect__label">{current?.label ?? placeholder ?? "—"}</span>
+        {current?.dot && <span className="cselect__dot" data-state={current.dot} />}
+        <span className="cselect__label">{current?.label ?? placeholder ?? "-"}</span>
         <ChevronIcon />
       </button>
       {open &&
@@ -97,7 +121,8 @@ export default function Select({
                     setOpen(false);
                   }}
                 >
-                  {o.label}
+                  {o.dot && <span className="cselect__dot" data-state={o.dot} />}
+                  <span className="cselect__opt-label">{o.label}</span>
                 </button>
               </li>
             ))}

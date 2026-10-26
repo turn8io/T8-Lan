@@ -3,6 +3,7 @@ pub mod dhcp;
 pub mod dns;
 pub mod hotspot;
 pub mod ip;
+pub mod nat;
 mod netsh;
 pub mod ping;
 pub mod scan;
@@ -15,6 +16,8 @@ pub struct AdapterInfo {
     pub friendly_name: String,
     pub description: String,
     pub luid: u64,
+    /// MAC-adres in kleine letters met dubbele punten ("dc:56:7b:d9:fc:1b"), leeg als onbekend.
+    pub mac: String,
     pub kind: AdapterKind,
     pub is_up: bool,
     pub is_dhcp: bool,

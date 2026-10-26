@@ -72,11 +72,22 @@ pub struct DhcpSettings {
     pub pool_size: u32,
     #[serde(default = "default_dhcp_lease_secs")]
     pub lease_secs: u32,
-    /// WiFi-hotspot (Wi-Fi Direct) met de DHCP-server erachter: netwerknaam en WPA2-wachtwoord.
+    /// WiFi-hotspot met de DHCP-server erachter: netwerknaam, WPA2-wachtwoord en de kaart.
     #[serde(default = "default_hotspot_ssid")]
     pub hotspot_ssid: String,
     #[serde(default = "default_hotspot_password")]
     pub hotspot_password: String,
+    /// Friendly name van de WiFi-kaart voor de hotspot; `None` laat Windows kiezen.
+    #[serde(default)]
+    pub hotspot_adapter: Option<String>,
+    /// DHCP-server meedraaien op de hotspot. Uit: apparaten gebruiken een vast IP in het
+    /// subnet van `server_ip`, dat de hotspot-adapter dan nog steeds krijgt.
+    #[serde(default = "default_true")]
+    pub hotspot_dhcp: bool,
+    /// Internet delen via de hotspot: een WinNAT-regel voor het subnet. Ook live te
+    /// wisselen; de DNS-voorkeur van de gebruiker wordt altijd al uitgedeeld.
+    #[serde(default)]
+    pub hotspot_internet: bool,
 }
 
 impl Default for DhcpSettings {
@@ -89,6 +100,9 @@ impl Default for DhcpSettings {
             lease_secs: default_dhcp_lease_secs(),
             hotspot_ssid: default_hotspot_ssid(),
             hotspot_password: default_hotspot_password(),
+            hotspot_adapter: None,
+            hotspot_dhcp: true,
+            hotspot_internet: false,
         }
     }
 }
@@ -97,7 +111,7 @@ fn default_hotspot_ssid() -> String {
     "T8-Lan".to_string()
 }
 fn default_hotspot_password() -> String {
-    "turn8-lan".to_string()
+    "T8online".to_string()
 }
 
 fn default_dhcp_server_ip() -> String {
@@ -243,10 +257,23 @@ pub fn load(app: &AppHandle) -> Result<Settings, String> {
         return Ok(Settings::default());
     }
     let raw = std::fs::read_to_string(&path).map_err(|e| format!("lezen settings: {e}"))?;
-    serde_json::from_str::<Settings>(&raw).or_else(|e| {
-        eprintln!("settings.json corrupt, terug naar default: {e}");
-        Ok(Settings::default())
-    })
+    serde_json::from_str::<Settings>(&raw)
+        .or_else(|e| {
+            eprintln!("settings.json corrupt, terug naar default: {e}");
+            Ok(Settings::default())
+        })
+        .map(migrate)
+}
+
+/// Opgeslagen standaardwaarden uit een eerdere versie naar de huidige standaard. Alleen
+/// een waarde die precies de oude standaard is, want die was nooit de keuze van de
+/// gebruiker; een zelfgekozen waarde blijft staan.
+fn migrate(mut s: Settings) -> Settings {
+    // 0.4.x leverde "turn8-lan" als hotspot-wachtwoord, 0.5.0 maakte dat "T8online".
+    if s.dhcp.hotspot_password == "turn8-lan" {
+        s.dhcp.hotspot_password = default_hotspot_password();
+    }
+    s
 }
 
 pub fn save(app: &AppHandle, settings: &Settings) -> Result<(), String> {
@@ -259,4 +286,20 @@ pub fn save(app: &AppHandle, settings: &Settings) -> Result<(), String> {
     std::fs::write(&tmp, raw).map_err(|e| format!("schrijven tmp: {e}"))?;
     std::fs::rename(&tmp, &path).map_err(|e| format!("rename tmp: {e}"))?;
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn old_default_password_migrates_but_own_choice_stays() {
+        let mut s = Settings::default();
+        s.dhcp.hotspot_password = "turn8-lan".into();
+        assert_eq!(migrate(s).dhcp.hotspot_password, "T8online");
+
+        let mut s = Settings::default();
+        s.dhcp.hotspot_password = "eigen-keuze".into();
+        assert_eq!(migrate(s).dhcp.hotspot_password, "eigen-keuze");
+    }
 }

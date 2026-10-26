@@ -83,6 +83,9 @@ struct Pool {
     first: u32,
     last: u32,
     lease_secs: u32,
+    /// DNS-servers voor de clients (de voorkeur uit de DNS-tab); leeg betekent het
+    /// server-IP zelf, als er geen bruikbare voorkeur is.
+    dns: [Option<Ipv4Addr>; 2],
 }
 
 impl Pool {
@@ -137,6 +140,7 @@ impl Pool {
             first,
             last,
             lease_secs: cfg.lease_secs,
+            dns: [None, None],
         })
     }
 
@@ -202,18 +206,21 @@ struct Running {
     adapter: String,
     restore: PreviousConfig,
     pool: Pool,
-    hotspot: Option<crate::network::hotspot::HotspotInfo>,
 }
 
-/// Door Tauri beheerde servertoestand (één server tegelijk).
+/// Door Tauri beheerde servertoestand (één server tegelijk). De hotspot staat er los van:
+/// die kan draaien zonder DHCP-server (apparaten met een vast IP) en de UI moet dat blijven
+/// zien, dus hij hoort bij de status en niet bij de draaiende server.
 pub struct DhcpServer {
     inner: Mutex<Option<Running>>,
+    hotspot: Mutex<Option<crate::network::hotspot::HotspotInfo>>,
 }
 
 impl DhcpServer {
     pub fn new() -> Self {
         Self {
             inner: Mutex::new(None),
+            hotspot: Mutex::new(None),
         }
     }
 
@@ -221,13 +228,28 @@ impl DhcpServer {
         self.inner.lock().map(|g| g.is_some()).unwrap_or(false)
     }
 
+    /// Onthoud (of vergeet) de hotspot waar de server bij hoort; zichtbaar in elke status.
+    pub fn set_hotspot(&self, info: Option<crate::network::hotspot::HotspotInfo>) {
+        if let Ok(mut g) = self.hotspot.lock() {
+            *g = info;
+        }
+    }
+
+    fn hotspot_info(&self) -> Option<crate::network::hotspot::HotspotInfo> {
+        self.hotspot.lock().ok().and_then(|g| g.clone())
+    }
+
     pub fn status(&self) -> DhcpStatus {
+        let idle = DhcpStatus {
+            hotspot: self.hotspot_info(),
+            ..DhcpStatus::default()
+        };
         let guard = match self.inner.lock() {
             Ok(g) => g,
-            Err(_) => return DhcpStatus::default(),
+            Err(_) => return idle,
         };
         let Some(run) = guard.as_ref() else {
-            return DhcpStatus::default();
+            return idle;
         };
         let shared = run.shared.lock();
         let (leases, listening, error) = match shared {
@@ -242,21 +264,24 @@ impl DhcpServer {
             listening,
             leases,
             error,
-            hotspot: run.hotspot.clone(),
+            hotspot: idle.hotspot,
         }
     }
 
     /// Start de server op `adapter_name`: zet de adapter op het server-IP (zonder
-    /// gateway), onthoudt de vorige configuratie en start de luisterthread. `hotspot`
-    /// is informatief (zichtbaar in de status) als de adapter een eigen hotspot is.
+    /// gateway), onthoudt de vorige configuratie en start de luisterthread. Staat het
+    /// server-IP er al statisch op (zoals op de hotspot-adapter), dan blijft dat ook na
+    /// `stop` staan. `dns` zijn de servers voor de clients; leeg is het server-IP zelf.
     pub fn start(
         &self,
         app: &AppHandle,
         adapter_name: &str,
         cfg: &DhcpConfig,
-        hotspot: Option<crate::network::hotspot::HotspotInfo>,
+        dns: [Option<Ipv4Addr>; 2],
     ) -> Result<(), String> {
-        let pool = Pool::parse(cfg)?;
+        let mut pool = Pool::parse(cfg)?;
+        pool.dns = dns;
+        let hotspot = self.hotspot_info();
         let mut guard = self.inner.lock().map_err(|e| format!("lock: {e}"))?;
         if guard.is_some() {
             return Err("DHCP-server draait al".into());
@@ -269,7 +294,7 @@ impl DhcpServer {
             && restore.subnet.as_deref() == Some(&pool.mask.to_string())
             && restore.gateway.is_none();
         if !already_set {
-            crate::network::ip::set_static_no_gateway(
+            crate::network::ip::claim_static_no_gateway(
                 adapter_name,
                 &pool.server.to_string(),
                 &pool.mask.to_string(),
@@ -300,7 +325,6 @@ impl DhcpServer {
             adapter: adapter_name.to_string(),
             restore,
             pool,
-            hotspot,
         });
         drop(guard);
         emit_status(app, self.status());
@@ -321,7 +345,7 @@ impl DhcpServer {
             let _ = t.join();
         }
         let result = switching::apply_config(app, &run.restore);
-        emit_status(app, DhcpStatus::default());
+        emit_status(app, self.status());
         result
     }
 }
@@ -702,7 +726,9 @@ fn build_reply(req: &Packet, pool: &Pool, msg_type: u8, yiaddr: Option<Ipv4Addr>
         }
         push_opt(&mut p, OPT_SUBNET_MASK, &pool.mask.octets());
         push_opt(&mut p, OPT_ROUTER, &pool.server.octets());
-        push_opt(&mut p, OPT_DNS, &pool.server.octets());
+        let server = pool.server.octets();
+        let dns: Vec<u8> = pool.dns.iter().flatten().flat_map(|d| d.octets()).collect();
+        push_opt(&mut p, OPT_DNS, if dns.is_empty() { &server[..] } else { &dns[..] });
         push_opt(&mut p, OPT_BROADCAST, &pool.broadcast().octets());
     }
     p.push(OPT_END);
@@ -769,6 +795,21 @@ mod tests {
         let mut v = reply.to_vec();
         v[0] = 1;
         Box::leak(v.into_boxed_slice())
+    }
+
+    /// Zonder DNS-voorkeur is de DNS het server-IP; met voorkeur de echte servers, want de
+    /// pc draait zelf geen DNS en internet-delen moet ook voor al verbonden clients werken.
+    #[test]
+    fn dns_option_is_server_or_shared_servers() {
+        let buf = client_packet(DHCPDISCOVER, [1, 2, 3, 4, 5, 6], Ipv4Addr::UNSPECIFIED, &[]);
+        let req = Packet::parse(&buf).unwrap();
+        let mut pool = Pool::parse(&cfg()).unwrap();
+        let ip = Some(Ipv4Addr::new(192, 168, 8, 100));
+        let offer = build_reply(&req, &pool, DHCPOFFER, ip);
+        assert_eq!(opt_of(&offer, OPT_DNS).unwrap(), vec![192, 168, 8, 8]);
+        pool.dns = [Some(Ipv4Addr::new(1, 1, 1, 1)), Some(Ipv4Addr::new(1, 0, 0, 1))];
+        let offer = build_reply(&req, &pool, DHCPOFFER, ip);
+        assert_eq!(opt_of(&offer, OPT_DNS).unwrap(), vec![1, 1, 1, 1, 1, 0, 0, 1]);
     }
 
     #[test]
