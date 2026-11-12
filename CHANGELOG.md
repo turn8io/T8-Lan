@@ -4,13 +4,25 @@ Nieuwste bovenaan. De datum is de publicatiedatum van de release op GitHub; de i
 heet steeds `T8-Lan-v<major.minor>-setup.exe`. Bijwerken hoort bij elke release, in dezelfde
 commit (zie `CLAUDE.md`).
 
-## Niet uitgebracht
+## 0.5.1 - 2026-11-13
 
-- Repo: GitHub Actions-build verwijderd; releases worden lokaal gebouwd en ondertekend.
-- Repo: dode scripts (`scripts\rename-installer.ps1`, `scripts\sign.ps1`) en het npm-script
-  `release` verwijderd (vervangen door `release:signed`); ongebruikte vertaalsleutel
-  `dns.custom` weg; `download-stats.ps1` wijst naar de juiste repo; `CLAUDE.md` en dit
-  bestand toegevoegd.
+### Nieuw
+- Netwerkscan herkent **intercoms**, zonder inloggen: **2N** (type, firmware en serienummer
+  via het open `/api/system/info`) en **Zenitel/Stentofon** (merk en firmware uit de
+  StationWeb-loginpagina), met het MAC-adres als vangnet voor beide merken. Een 2N werd
+  eerder als "camera, merk onbekend" getoond.
+
+### Gewijzigd
+- De http(s)-probes van de scan lopen via WinHTTP (de HTTP-stack van Windows zelf), dus
+  https naar apparaten met een self-signed certificaat werkt zonder extra crates.
+- Repo: geen GitHub Actions-build meer, releases worden lokaal gebouwd en ondertekend; dode
+  scripts (`rename-installer.ps1`, `scripts\sign.ps1`, npm-script `release`) en de
+  ongebruikte vertaalsleutel `dns.custom` verwijderd; `CLAUDE.md` en dit bestand toegevoegd.
+
+### Beveiliging
+- vite 6.4.5 en quick-xml 0.41.0 (via wayland-scanner 0.31.11), alleen versies van minstens
+  7 dagen oud. glib en event-listener uit de lijst zijn Linux-only en zitten niet in de
+  Windows-installer.
 
 ## 0.5.0 - 2026-10-26
 

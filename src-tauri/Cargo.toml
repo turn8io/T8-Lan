@@ -1,11 +1,11 @@
 [package]
 name = "t8-lan"
-version = "0.5.0"
+version = "0.5.1"
 description = "Snel schakelen tussen statisch IP en DHCP op Windows. Door Turn8."
 authors = ["Turn8 <info@turn8.io>"]
 edition = "2021"
 rust-version = "1.80"
-# Proprietair, source-available — zie ../LICENSE (geen open source).
+# Proprietair, source-available - zie ../LICENSE (geen open source).
 license = "LicenseRef-Turn8-Proprietary"
 publish = false
 default-run = "T8-Lan"
@@ -66,6 +66,8 @@ features = [
     "Win32_NetworkManagement_IpHelper",
     "Win32_NetworkManagement_Ndis",
     "Win32_NetworkManagement_WiFi",
+    # WinHTTP: http(s)-probes van de netwerkscan (intercoms), TLS zonder extra crates
+    "Win32_Networking_WinHttp",
     "Win32_Networking_WinSock",
     "Win32_Security",
     "Win32_System_Threading",

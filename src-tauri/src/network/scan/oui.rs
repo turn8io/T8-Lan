@@ -71,10 +71,14 @@ pub const CAMERA_OUIS: &[(&str, &str)] = &[
     ("00:18:85", "Avigilon"),
 ];
 
-/// Niet-camera security-/alarmfabrikanten (GE Security → Interlogix/Aritech, nu
-/// UTC/Carrier). Apart van [`CAMERA_OUIS`] zodat deze apparaten wél een merk-label
-/// krijgen maar niet als camera worden gemarkeerd. Bron: IEEE OUI-registry.
+/// Niet-camera security-fabrikanten: intercoms (2N, Zenitel/Stentofon) en alarmpanelen
+/// (GE Security → Interlogix/Aritech, nu UTC/Carrier). Apart van [`CAMERA_OUIS`] zodat
+/// deze apparaten wél een merk-label krijgen maar niet als camera worden gemarkeerd.
+/// Bron: IEEE OUI-registry; Zenitel 00:13:CB gemeten op een Stentofon (12-11-2026).
 pub const ALARM_OUIS: &[(&str, &str)] = &[
+    // Intercoms (vangnet als de http-probe in scan/probe.rs niets oplevert).
+    ("7C:1E:B3", "2N intercom"),
+    ("00:13:CB", "Zenitel intercom"),
     ("00:17:55", "GE/Interlogix alarm"),
     ("00:08:F8", "UTC/Interlogix alarm"),
     ("00:B0:19", "UTC/Interlogix alarm"),

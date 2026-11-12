@@ -4,9 +4,10 @@
 //! Bewust "rustig": alle ARP-probes ([`crate::network::ip::check_ip_conflict`]) vuren
 //! tegelijk af en de antwoorden worden binnen een kort venster verzameld. Verrijking per
 //! bezet IP gebeurt met enkele korte TCP-poortchecks en gerichte fingerprints: NX-NVR
-//! (plain HTTP op 7001) en — alleen voor niet-camera's — ATS-alarmpanelen (identify op
-//! 5555/32000). Daarnaast loopt één Hikvision SADP-multicast voor het hele subnet. Geen
-//! poort-bruteforce, geen credential-tests.
+//! (plain HTTP op 7001), intercoms (2N via zijn open JSON-API, Zenitel/Stentofon via de
+//! loginpagina; alleen als poort 80 of 443 open staat) en - alleen voor niet-camera's -
+//! ATS-alarmpanelen (identify op 5555/32000). Daarnaast loopt één Hikvision SADP-multicast
+//! voor het hele subnet. Geen poort-bruteforce, geen credential-tests.
 
 pub mod onvif;
 pub mod oui;
@@ -30,7 +31,7 @@ const ONVIF_LISTEN: Duration = Duration::from_millis(2500);
 /// Veiligheidsplafond voor de ARP-fase. Alle probes vuren tegelijk: levende apparaten
 /// antwoorden binnen milliseconden, lege adressen melden zich pas na de systeem-ARP-timeout
 /// (~1–2 s). We wachten tot álle probes gemeld hebben (of dit plafond), zodat we niets
-/// missen — door de volledige parallelliteit blijft dat ~2 s i.p.v. de oude ~20 s.
+/// missen - door de volledige parallelliteit blijft dat ~2 s i.p.v. de oude ~20 s.
 const ARP_MAX_WAIT: Duration = Duration::from_secs(3);
 /// Tweede ARP-ronde voor adressen die in ronde één niet antwoordden. Bij 254 gelijktijdige
 /// broadcasts (zeker via WiFi of een drukke switch) raakt wel eens een request of reply
@@ -61,7 +62,7 @@ pub enum ScanEvent {
 }
 
 /// Scan het /24-subnet van `subnet_base`. Roept `on_device` aan zodra een apparaat is
-/// ontdekt en verrijkt — zo kan de UI resultaten live tonen i.p.v. te wachten tot het
+/// ontdekt en verrijkt - zo kan de UI resultaten live tonen i.p.v. te wachten tot het
 /// einde. De callback wordt vanuit meerdere worker-threads aangeroepen.
 pub fn scan_devices<F>(subnet_base: &str, on_event: F) -> Result<(), String>
 where
@@ -178,9 +179,11 @@ where
 
 /// Verrijk een bezet IP met merk/product en een eventuele klikbare webinterface.
 ///
-/// Slimme volgorde: eerst classificeren als camera/NVR (NX op 7001, cameramerk via OUI,
-/// of RTSP-poort 554). De duurdere ATS-alarmprobe (5555/32000) draaien we **alleen** als
-/// het apparaat géén camera/NVR is — zo sturen we nooit een ATS-packet naar camera's.
+/// Slimme volgorde: NX op 7001, dan intercoms (vóór de cameraclassificatie, want een 2N
+/// heeft ook RTSP open en zou anders "camera, merk onbekend" worden), dan camera/NVR
+/// (cameramerk via OUI of RTSP-poort 554). De duurdere ATS-alarmprobe (5555/32000) draaien
+/// we **alleen** als het apparaat géén camera/NVR is - zo sturen we nooit een ATS-packet
+/// naar camera's.
 fn enrich(ip_addr: &str, mac: &str) -> DeviceInfo {
     // NX-NVR (Network Optix) op 7001 wordt áltijd gecheckt: ook als er op poort 80 een
     // andere app draait, willen we weten dat 7001 een NX-server is. Heeft voorrang op de
@@ -195,6 +198,20 @@ fn enrich(ip_addr: &str, mac: &str) -> DeviceInfo {
         };
     }
 
+    // Webpoorten één keer checken: bepalen de klikbare URL en of een http-probe zin heeft.
+    let http_open = probe::port_open(ip_addr, 80, PORT_TIMEOUT);
+    let https_open = probe::port_open(ip_addr, 443, PORT_TIMEOUT);
+
+    if let Some(ic) = probe::intercom_fingerprint(ip_addr, http_open, https_open) {
+        return DeviceInfo {
+            ip: ip_addr.to_string(),
+            brand: Some(ic.brand),
+            is_camera: false,
+            detail: Some(ic.detail),
+            web_url: Some(ic.web_url),
+        };
+    }
+
     // Cameraherkenning via MAC-OUI (gratis) + RTSP-poort 554. Is het een camera, dan
     // tonen we het merk en slaan we de ATS-probe over.
     let camera_brand = oui::lookup_brand(mac);
@@ -205,7 +222,7 @@ fn enrich(ip_addr: &str, mac: &str) -> DeviceInfo {
             brand: camera_brand.map(str::to_string),
             is_camera: true,
             detail: None,
-            web_url: web_url_for(ip_addr),
+            web_url: web_url(ip_addr, http_open, https_open),
         };
     }
 
@@ -217,7 +234,7 @@ fn enrich(ip_addr: &str, mac: &str) -> DeviceInfo {
             brand: Some(label),
             is_camera: false,
             detail: Some(panel_name),
-            web_url: web_url_for(ip_addr),
+            web_url: web_url(ip_addr, http_open, https_open),
         };
     }
 
@@ -227,17 +244,52 @@ fn enrich(ip_addr: &str, mac: &str) -> DeviceInfo {
         brand: oui::lookup_alarm_brand(mac).map(str::to_string),
         is_camera: false,
         detail: None,
-        web_url: web_url_for(ip_addr),
+        web_url: web_url(ip_addr, http_open, https_open),
     }
 }
 
 /// Klikbare webinterface-URL: poort 80 (http) heeft voorkeur, anders 443 (https).
-fn web_url_for(ip_addr: &str) -> Option<String> {
-    if probe::port_open(ip_addr, 80, PORT_TIMEOUT) {
+fn web_url(ip_addr: &str, http_open: bool, https_open: bool) -> Option<String> {
+    if http_open {
         Some(format!("http://{ip_addr}"))
-    } else if probe::port_open(ip_addr, 443, PORT_TIMEOUT) {
+    } else if https_open {
         Some(format!("https://{ip_addr}"))
     } else {
         None
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::sync::Mutex;
+
+    /// Live: `T8_SCAN_BASE=192.168.62.0 cargo test --lib scan_live -- --ignored --nocapture`.
+    /// Volledige scan van het eigen LAN, met duur en alle gevonden apparaten.
+    #[test]
+    #[ignore]
+    fn scan_live() {
+        let base = std::env::var("T8_SCAN_BASE").expect("T8_SCAN_BASE");
+        let found: Arc<Mutex<Vec<DeviceInfo>>> = Arc::new(Mutex::new(Vec::new()));
+        let sink = Arc::clone(&found);
+        let start = Instant::now();
+        scan_devices(&base, move |ev| {
+            if let ScanEvent::Device(d) = ev {
+                sink.lock().unwrap().push(d);
+            }
+        })
+        .expect("scan");
+        let mut list = found.lock().unwrap().clone();
+        list.sort_by_key(|d| d.ip.split('.').last().and_then(|o| o.parse::<u8>().ok()).unwrap_or(0));
+        println!("scan van {base}/24 in {:.1}s, {} meldingen", start.elapsed().as_secs_f32(), list.len());
+        for d in &list {
+            println!(
+                "  {:<15} {:<28} {:<40} {}",
+                d.ip,
+                d.brand.as_deref().unwrap_or("-"),
+                d.detail.as_deref().unwrap_or(""),
+                d.web_url.as_deref().unwrap_or("")
+            );
+        }
     }
 }

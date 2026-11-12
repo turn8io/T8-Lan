@@ -9,7 +9,7 @@ Ontwikkeld door **Turn8.io** - *improving saves time*.
 
 ## ⬇️ Download
 
-### ▶︎ [Download T8-Lan voor Windows](https://github.com/turn8io/T8-Lan/releases/download/v0.5.0/T8-Lan-v0.5-setup.exe)
+### ▶︎ [Download T8-Lan voor Windows](https://github.com/turn8io/T8-Lan/releases/download/v0.5.1/T8-Lan-v0.5-setup.exe)
 
 Klik op de link hierboven - de installer (`T8-Lan-v0.5-setup.exe`) wordt **meteen
 gedownload**. Dubbelklik en installeer. Klaar - verder hoef je niets met GitHub te doen.
@@ -56,6 +56,9 @@ numerieke volgorde.
 - Twee ARP-rondes per scan, zodat een apparaat dat één broadcast mist alsnog gevonden wordt.
 - **ATS-alarmpanelen** (Aritech/Carrier): een lichte identify op TCP **32000** leest
   **type, firmware en paneelnaam** uit - alleen bij apparaten die geen camera/NVR zijn.
+- **Intercoms**, zonder inloggen: **2N** (type, firmware en serienummer via het open
+  `/api/system/info`) en **Zenitel/Stentofon** (merk en firmware uit de StationWeb-loginpagina);
+  met het MAC-adres als vangnet voor beide merken.
 - Apparaten met een webinterface krijgen een **geel webicoon** en open je met een klik in
   de browser; per IP is er een knop om het adres te **kopiëren** of direct te **pingen**.
 
