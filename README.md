@@ -9,9 +9,9 @@ Ontwikkeld door **Turn8.io** - *improving saves time*.
 
 ## ⬇️ Download
 
-### ▶︎ [Download T8-Lan voor Windows](https://github.com/turn8io/T8-Lan/releases/download/v0.5.1/T8-Lan-v0.5-setup.exe)
+### ▶︎ [Download T8-Lan voor Windows](https://github.com/turn8io/T8-Lan/releases/download/v0.6.0/T8-Lan-v0.6-setup.exe)
 
-Klik op de link hierboven - de installer (`T8-Lan-v0.5-setup.exe`) wordt **meteen
+Klik op de link hierboven - de installer (`T8-Lan-v0.6-setup.exe`) wordt **meteen
 gedownload**. Dubbelklik en installeer. Klaar - verder hoef je niets met GitHub te doen.
 Windows 10/11, ruim 1 MB. Geen account, geen telemetry, geen cloud.
 
@@ -54,6 +54,11 @@ numerieke volgorde.
   **Hikvision SADP**, MAC-OUI (Hikvision, Dahua, Axis, Bosch, Hanwha, Uniview, …) en een
   **NX-fingerprint** op poort 7001 (Network Optix / Nx Witness).
 - Twee ARP-rondes per scan, zodat een apparaat dat één broadcast mist alsnog gevonden wordt.
+- Het bereik volgt het subnetmasker van de gekozen kaart (tot /22). Een **ander bereik**
+  kies je met het driehoekje in de scanknop, bijvoorbeeld `192.168.101.1-254`; eigen
+  bereiken blijven bewaard. Zo'n scan loopt via de router, zonder ARP en SADP.
+- Camera's worden ook rechtstreeks per adres via ONVIF bevraagd, zodat het type er staat
+  als multicast niet aankomt.
 - **ATS-alarmpanelen** (Aritech/Carrier): een lichte identify op TCP **32000** leest
   **type, firmware en paneelnaam** uit - alleen bij apparaten die geen camera/NVR zijn.
 - **Intercoms**, zonder inloggen: **2N** (type, firmware en serienummer via het open

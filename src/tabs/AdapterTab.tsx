@@ -183,6 +183,19 @@ export default function AdapterTab() {
     }
   };
 
+  const onRenew = async () => {
+    if (!selectedName) return;
+    setBusy(true);
+    try {
+      await ipc.dhcpRenew(selectedName);
+      await settleAndRefresh();
+    } catch (e) {
+      flash(String(e), "err");
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const onApplyDhcp = async () => {
     if (!selectedName) return;
     setBusy(true);
@@ -243,6 +256,12 @@ export default function AdapterTab() {
   // What to show per row depends on mode: DHCP shows the live adapter values
   // (read-only, click-to-copy); static shows the configured values (editable).
   const subnetShown = isDhcp ? status?.adapter?.current_subnet ?? "—" : subnet;
+  // De kaart toont een probleem in plaats van waarden als er niets te tonen valt: geen
+  // link, of DHCP zonder server (dan geeft Windows een 169.254-noodadres, APIPA, dat een
+  // monteur anders voor een echt IP aanziet).
+  const adapterDown = status?.adapter != null && !status.adapter.is_up;
+  const noLease = isDhcp && (currentIp === null || currentIp.startsWith("169.254."));
+  const problem = adapterDown ? "down" : noLease ? "nolease" : null;
   const gwShown = isDhcp ? status?.adapter?.current_gateway ?? "—" : gwValue;
 
   const saveSubnet = async () => {
@@ -305,9 +324,35 @@ export default function AdapterTab() {
       </div>
 
       {/* Status tile */}
-      <div className={`status-card ${pulseClass}`}>
+      <div className={`status-card ${pulseClass} ${problem ? "status-card--problem" : ""}`}>
         {busy && <span className="card-spinner" aria-label="bezig…" />}
         <div className={`status-card__body ${busy ? "is-fading" : ""}`}>
+        {problem === "down" && (
+          <div className="status-problem">
+            <span className="status-problem__title">{t("adapter.downTitle")}</span>
+            <span className="status-problem__text">{t("adapter.downText")}</span>
+            {!isDhcp && currentIp && (
+              <span className="status-problem__note mono">
+                {t("adapter.configured").replace("{ip}", currentIp)}
+              </span>
+            )}
+          </div>
+        )}
+        {problem === "nolease" && (
+          <div className="status-problem">
+            <span className="status-problem__title">{t("adapter.noIpTitle")}</span>
+            <span className="status-problem__text">{t("adapter.noIpText")}</span>
+            {currentIp && (
+              <span className="status-problem__note mono">
+                {t("adapter.apipa").replace("{ip}", currentIp)}
+              </span>
+            )}
+            <button className="btn btn--ghost btn--full" disabled={busy} onClick={onRenew}>
+              {t("adapter.renew")}
+            </button>
+          </div>
+        )}
+        {!problem && (<>
         {/* IP — DHCP: read-only + copy, Static: editable */}
         <div className="status-card__row">
           <span className="status-line__key">{isDhcp ? "DHCP IP" : "Static IP"}</span>
@@ -427,6 +472,7 @@ export default function AdapterTab() {
             </button>
           )}
         </div>
+        </>)}
         </div>
       </div>
 

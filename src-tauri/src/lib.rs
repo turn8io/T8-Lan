@@ -48,6 +48,7 @@ pub fn run() {
             commands::get_adapters,
             commands::get_current_status,
             commands::switch_to_dhcp,
+            commands::dhcp_renew,
             commands::switch_to_static,
             commands::check_ip_conflict,
             commands::scan_devices,

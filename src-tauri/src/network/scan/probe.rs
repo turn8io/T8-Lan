@@ -8,7 +8,8 @@
 
 use std::ffi::c_void;
 use std::io::{Read, Write};
-use std::net::{SocketAddr, TcpStream};
+use socket2::{Domain, Protocol, Socket, Type};
+use std::net::{Ipv4Addr, SocketAddr, SocketAddrV4, TcpStream};
 use std::time::Duration;
 use windows::core::{w, HSTRING, PCWSTR};
 use windows::Win32::Networking::WinHttp::{
@@ -24,28 +25,34 @@ use windows::Win32::Networking::WinHttp::{
 /// Webpoort van een Network Optix / Nx Witness server.
 pub const NX_PORT: u16 = 7001;
 
+/// TCP-verbinding naar `ip:port` vanaf het adapter-IP `src`, zodat de probe via de gekozen
+/// kaart loopt en niet via de kaart die Windows toevallig kiest.
+fn connect(src: Ipv4Addr, ip: &str, port: u16, timeout: Duration) -> Option<TcpStream> {
+    let dest: SocketAddr = SocketAddrV4::new(ip.parse().ok()?, port).into();
+    let socket = Socket::new(Domain::IPV4, Type::STREAM, Some(Protocol::TCP)).ok()?;
+    socket.bind(&SocketAddr::from(SocketAddrV4::new(src, 0)).into()).ok()?;
+    socket.connect_timeout(&dest.into(), timeout).ok()?;
+    Some(socket.into())
+}
+
 /// `true` als er een TCP-verbinding naar `ip:port` tot stand komt binnen `timeout`.
-pub fn port_open(ip: &str, port: u16, timeout: Duration) -> bool {
-    match format!("{ip}:{port}").parse::<SocketAddr>() {
-        Ok(addr) => TcpStream::connect_timeout(&addr, timeout).is_ok(),
-        Err(_) => false,
-    }
+pub fn port_open(src: Ipv4Addr, ip: &str, port: u16, timeout: Duration) -> bool {
+    connect(src, ip, port, timeout).is_some()
 }
 
 /// Probeer een NX-NVR (Network Optix / Nx Witness) te herkennen op poort 7001.
 ///
 /// Doet één plain-HTTP `GET /api/moduleInformation` en leest de `Server:`-header.
 /// Geeft bv. `Some("Nx Witness V6.1")` terug, of `None` als het geen NX is.
-pub fn nx_fingerprint(ip: &str) -> Option<String> {
+pub fn nx_fingerprint(src: Ipv4Addr, ip: &str) -> Option<String> {
     // Een drukke NX-server (of een server achter een trage switch) haalt 500 ms soms
     // niet, zeker midden in de ARP-storm van de scan. Ruimere timeout + één herkansing.
-    nx_fingerprint_once(ip, Duration::from_millis(1000))
-        .or_else(|| nx_fingerprint_once(ip, Duration::from_millis(1500)))
+    nx_fingerprint_once(src, ip, Duration::from_millis(1000))
+        .or_else(|| nx_fingerprint_once(src, ip, Duration::from_millis(1500)))
 }
 
-fn nx_fingerprint_once(ip: &str, connect_timeout: Duration) -> Option<String> {
-    let addr: SocketAddr = format!("{ip}:{NX_PORT}").parse().ok()?;
-    let mut stream = TcpStream::connect_timeout(&addr, connect_timeout).ok()?;
+fn nx_fingerprint_once(src: Ipv4Addr, ip: &str, connect_timeout: Duration) -> Option<String> {
+    let mut stream = connect(src, ip, NX_PORT, connect_timeout)?;
     stream.set_read_timeout(Some(Duration::from_millis(2000))).ok()?;
     stream.set_write_timeout(Some(Duration::from_millis(800))).ok()?;
 
@@ -112,15 +119,14 @@ const ATS_IDENTIFY: [u8; 10] = [
 /// timeout, of geen geldig ATS-antwoord) dan fallback naar 32000.
 ///
 /// Geeft `(label, paneelnaam)` terug, bv. `("ATS1500AIP ATS3 MR_4.4.43343", "Bert en Manuela")`.
-pub fn ats_fingerprint(ip: &str) -> Option<(String, String)> {
-    ATS_PORTS.iter().find_map(|&port| ats_probe(ip, port))
+pub fn ats_fingerprint(src: Ipv4Addr, ip: &str) -> Option<(String, String)> {
+    ATS_PORTS.iter().find_map(|&port| ats_probe(src, ip, port))
 }
 
 /// Eén ATS-identify tegen `ip:port`: connect, stuur het identify-packet, lees het
 /// antwoord en parse de ASCII-velden.
-fn ats_probe(ip: &str, port: u16) -> Option<(String, String)> {
-    let addr: SocketAddr = format!("{ip}:{port}").parse().ok()?;
-    let mut stream = TcpStream::connect_timeout(&addr, Duration::from_millis(600)).ok()?;
+fn ats_probe(src: Ipv4Addr, ip: &str, port: u16) -> Option<(String, String)> {
+    let mut stream = connect(src, ip, port, Duration::from_millis(600))?;
     stream.set_read_timeout(Some(Duration::from_millis(1500))).ok()?;
     stream.set_write_timeout(Some(Duration::from_millis(500))).ok()?;
 

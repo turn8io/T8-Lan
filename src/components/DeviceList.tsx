@@ -12,8 +12,14 @@ function ipKey(ip: string): number {
   return ip.split(".").reduce((acc, part) => acc * 256 + (parseInt(part, 10) || 0), 0);
 }
 
-/** Het label onder het IP: merk/product, of een generiek camera-label, of niets. */
+/** Het label onder het IP: merk en type, of een generiek camera-label, of niets. Staat
+ *  het merk al vooraan in het type ("HIKVISION DS-..."), dan niet nog eens ervoor. */
 function brandLabel(d: DeviceInfo): string | null {
+  if (d.brand && d.model) {
+    const hasBrand = d.model.toLowerCase().startsWith(d.brand.toLowerCase());
+    return hasBrand ? d.model : `${d.brand} ${d.model}`;
+  }
+  if (d.model) return d.model;
   if (d.brand) return d.brand;
   if (d.is_camera) return t("network.cameraUnknown");
   return null;

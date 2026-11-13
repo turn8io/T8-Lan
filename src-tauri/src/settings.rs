@@ -35,6 +35,9 @@ pub struct Settings {
     pub ssid_rules: Vec<SsidRule>,
     #[serde(default)]
     pub examples_seeded: bool,
+    /// Door de monteur bewaarde scanbereiken ("192.168.101.1-254"), naast het eigen subnet.
+    #[serde(default)]
+    pub scan_ranges: Vec<String>,
     /// Automatisch starten bij aanmelden (Taakplanner-taak). Standaard aan: T8-Lan is
     /// bedoeld als altijd-aanwezige tray-tool.
     #[serde(default = "default_true")]
@@ -225,6 +228,7 @@ impl Default for Settings {
             gateway_manual: None,
             dns: DnsSettings::default(),
             recent_ips_by_adapter: HashMap::new(),
+            scan_ranges: Vec::new(),
             ping: PingSettings {
                 target: default_ping_target(),
             },

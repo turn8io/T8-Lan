@@ -4,6 +4,50 @@ Nieuwste bovenaan. De datum is de publicatiedatum van de release op GitHub; de i
 heet steeds `T8-Lan-v<major.minor>-setup.exe`. Bijwerken hoort bij elke release, in dezelfde
 commit (zie `CLAUDE.md`).
 
+## 0.6.0 - 2026-11-13
+
+### Nieuw
+- Netwerkscan in een **ander bereik**: het driehoekje in de scanknop opent een keuzemenu
+  met "Eigen subnet" en je eigen bereiken ("192.168.101.1-254" of "192.168.101.0/24").
+  Bereiken voeg je daar toe of verwijder je; ze blijven bewaard. Zo'n scan loopt via de
+  router, met ping, poortchecks en ONVIF per adres; ARP en SADP werken daar niet en dat
+  staat erbij.
+- **ONVIF-probe rechtstreeks per adres**, naast de multicast. Camera's geven zo hun type
+  terug, ook als multicast niet aankomt en ook vanuit een ander VLAN.
+- Waarschuwing in de scan als SADP niet kon luisteren (poort 37020 bezet) of als de
+  firewallregel voor de draaiende exe ontbreekt.
+
+### Gewijzigd
+- Het scanbereik volgt het **subnetmasker** van de adapter (tot /22, 1022 adressen) in
+  plaats van altijd het /24 rond het adapter-IP.
+- ARP-sweep en TCP-checks lopen via de **gekozen netwerkkaart**. Op een pc met meerdere
+  kaarten koos Windows er eerder zelf een, waardoor een scan vrijwel leeg kon blijven.
+- Het cameratype komt uit de ONVIF-scope `hardware` (altijd gevuld) in plaats van `name`
+  (aanpasbaar, soms leeg), met het merk ervoor: "Hikvision DS-2CD2387G3-LIS2UY/SL" waar
+  eerder alleen het kale typenummer stond.
+- Merk en type zijn gescheiden velden. Bij meerdere bronnen voor hetzelfde IP wint de
+  betrouwbaarste (apparaat zelf, SADP, ONVIF-hardware, ONVIF-naam, MAC-adres) in plaats van
+  het label met een spatie erin.
+- Vijf Hikvision-MAC-reeksen toegevoegd: 08:CC:81, 0C:75:D2, 04:EE:CD, 88:DE:39, CC:13:F3.
+- Een pc of printer die WS-Discovery spreekt zonder ONVIF telt niet meer als camera.
+- **Ping** begint met het subnet van de netwerkkaart ("192.168.62.") in plaats van 1.1.1.1:
+  alleen het laatste getal intikken om te zien of een adres vrij is.
+- Ping toont vóór de start "Stel een IP-adres in en druk op Start" in plaats van
+  "Wachten op data...".
+- De statuskaart toont een probleem in plaats van waarden als er niets te tonen valt:
+  **"Geen IP ontvangen"** (DHCP zonder server, met het noodadres klein eronder en een
+  knop **"Opnieuw aanvragen"** die `ipconfig /renew` doet, met een limiet van 12 seconden)
+  en **"Geen verbinding"** (geen link op de kaart). Een monteur ziet zo meteen dat 169.254.x.x geen echt IP is.
+
+### Opgelost
+- Een adapter met DHCP aan maar zonder DHCP-server (Windows-noodadres 169.254.x.x, APIPA)
+  werd als "statisch" getoond, en "Schakel naar DHCP" faalde met "DHCP is already enabled".
+  De app leest nu de DHCP-vlag van de adapter in plaats van het antwoord van de server.
+
+### Beveiliging
+- Geen nieuwe meldingen met een oplossing sinds 0.5.1 (updatecheck van 9-11-2026); de regels
+  zonder bekende oplossing staan nog open.
+
 ## 0.5.1 - 2026-11-13
 
 ### Nieuw

@@ -5,6 +5,7 @@ use windows::Win32::Foundation::{ERROR_BUFFER_OVERFLOW, NO_ERROR};
 use windows::Win32::NetworkManagement::IpHelper::{
     GetAdaptersAddresses, GAA_FLAG_INCLUDE_GATEWAYS, GAA_FLAG_INCLUDE_PREFIX,
     GAA_FLAG_SKIP_ANYCAST, GAA_FLAG_SKIP_MULTICAST, IP_ADAPTER_ADDRESSES_LH,
+    IP_ADAPTER_DHCP_ENABLED,
 };
 use windows::Win32::Networking::WinSock::{AF_INET, SOCKADDR_IN};
 
@@ -74,8 +75,9 @@ pub fn list_adapters() -> Result<Vec<AdapterInfo>, String> {
             .join(":");
         let is_up = adapter.OperStatus.0 == IF_OPER_STATUS_UP;
 
-        let is_dhcp = adapter.Dhcpv4Server.iSockaddrLength > 0
-            && !adapter.Dhcpv4Server.lpSockaddr.is_null();
+        // De DHCP-vlag van de adapter, niet `Dhcpv4Server`: dat veld is pas gevuld na een
+        // lease. Zonder server (169.254-noodadres) staat DHCP wel aan, maar is het leeg.
+        let is_dhcp = unsafe { adapter.Anonymous2.Flags } & IP_ADAPTER_DHCP_ENABLED != 0;
 
         let (current_ip, current_subnet) = read_first_unicast_ipv4(adapter);
         let current_gateway = read_first_gateway_ipv4(adapter);
@@ -172,4 +174,24 @@ fn prefix_to_mask(prefix: u8) -> Ipv4Addr {
     }
     let mask: u32 = (!0u32).checked_shl(32 - prefix as u32).unwrap_or(0);
     Ipv4Addr::from(mask)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Vergelijk met `Get-NetIPInterface -AddressFamily IPv4 | ft InterfaceAlias,Dhcp`.
+    #[test]
+    #[ignore]
+    fn adapters_live() {
+        for a in list_adapters().unwrap() {
+            println!(
+                "{:<40} dhcp={:<5} up={:<5} ip={}",
+                a.friendly_name,
+                a.is_dhcp,
+                a.is_up,
+                a.current_ip.as_deref().unwrap_or("-")
+            );
+        }
+    }
 }

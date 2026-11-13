@@ -27,6 +27,12 @@ pub const CAMERA_OUIS: &[(&str, &str)] = &[
     ("B4:A3:82", "Hikvision"),
     ("BC:BA:C2", "Hikvision"),
     ("F8:4D:FC", "Hikvision"),
+    // Gemeten op camera's en faceterminals (13-11-2026).
+    ("08:CC:81", "Hikvision"),
+    ("0C:75:D2", "Hikvision"),
+    ("04:EE:CD", "Hikvision"),
+    ("88:DE:39", "Hikvision"),
+    ("CC:13:F3", "Hikvision"),
     // Dahua Technology
     ("3C:EF:8C", "Dahua"),
     ("90:02:A9", "Dahua"),
@@ -116,6 +122,9 @@ mod tests {
     fn camera_oui_matches() {
         assert_eq!(lookup_brand("44:19:B6:11:22:33"), Some("Hikvision"));
         assert_eq!(lookup_brand("3C:EF:8C:00:00:00"), Some("Dahua"));
+        for oui in ["08:CC:81", "0C:75:D2", "04:EE:CD", "88:DE:39", "CC:13:F3"] {
+            assert_eq!(lookup_brand(&format!("{oui}:F6:34:54")), Some("Hikvision"), "{oui}");
+        }
     }
 
     #[test]

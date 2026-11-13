@@ -103,6 +103,8 @@ export type Settings = {
     custom_secondary: string | null;
   };
   recent_ips_by_adapter: Record<string, RecentIp[]>;
+  /** Bewaarde scanbereiken ("192.168.101.1-254"), naast het eigen subnet. */
+  scan_ranges: string[];
   ping: { target: string };
   window: { x: number; y: number; width: number; height: number } | null;
   global_hotkey_enabled: boolean;
@@ -137,8 +139,13 @@ export type PingResult = {
 /** Eén ontdekt netwerkapparaat uit de netwerkscan. */
 export type DeviceInfo = {
   ip: string;
-  /** Camera-merk of NVR-product ("Hikvision", "Nx Witness V6.1"), of null. */
+  /** Merk ("Hikvision") of volledig productlabel ("Nx Witness V6.1"), of null. */
   brand: string | null;
+  /** Typenummer ("DS-2CD2387G3-LIS2UY/SL"), los van het merk, of null. */
+  model: string | null;
+  /** Herkomst van merk en type, oplopend in betrouwbaarheid: 0 onbekend, 1 MAC-adres,
+   *  2 ONVIF-naam, 3 ONVIF-hardware, 4 SADP, 5 het apparaat identificeerde zichzelf. */
+  rank: number;
   is_camera: boolean;
   /** Optionele derde regel (bv. paneelnaam van een alarmsysteem), of null. */
   detail: string | null;
@@ -175,12 +182,16 @@ export const ipc = {
     invoke<CurrentStatus>("get_current_status", { adapterName: adapter_name }),
   switchToDhcp: (adapter_name: string) =>
     invoke<void>("switch_to_dhcp", { adapterName: adapter_name }),
+  dhcpRenew: (adapter_name: string) =>
+    invoke<void>("dhcp_renew", { adapterName: adapter_name }),
   switchToStatic: (adapter_name: string, ip_addr: string) =>
     invoke<void>("switch_to_static", { adapterName: adapter_name, ipAddr: ip_addr }),
   checkIpConflict: (ip: string) =>
     invoke<string | null>("check_ip_conflict", { ip }),
-  scanDevices: (subnet_base: string) =>
-    invoke<void>("scan_devices", { subnetBase: subnet_base }),
+  /** Scan via de adapter met dit IP. Zonder `target` het eigen subnet (uit het masker),
+   *  met `target` een ander subnet ("192.168.101.0/24"). */
+  scanDevices: (adapter_ip: string, subnet_mask: string | null, target: string | null) =>
+    invoke<void>("scan_devices", { adapterIp: adapter_ip, subnetMask: subnet_mask, target }),
   listWifiNetworks: () => invoke<string[]>("list_wifi_networks"),
   updateHotkeys: (settings: Settings) =>
     invoke<void>("update_hotkeys", { settings }),

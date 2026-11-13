@@ -59,6 +59,13 @@ pub fn get_current_status(adapter_name: Option<String>) -> Result<CurrentStatus,
 }
 
 #[tauri::command]
+pub async fn dhcp_renew(adapter_name: String) -> Result<(), String> {
+    tokio::task::spawn_blocking(move || ip::renew_dhcp(&adapter_name))
+        .await
+        .map_err(|e| format!("renew worker faalt: {e}"))?
+}
+
+#[tauri::command]
 pub async fn switch_to_dhcp(app: AppHandle, adapter_name: String) -> Result<(), String> {
     tokio::task::spawn_blocking(move || switching::do_dhcp(&app, &adapter_name, "ui"))
         .await
@@ -78,21 +85,32 @@ pub async fn switch_to_static(
 
 #[tauri::command]
 pub fn check_ip_conflict(ip: String) -> Result<Option<String>, String> {
-    ip::check_ip_conflict(&ip, 300)
+    ip::check_ip_conflict(&ip, None)
 }
 
 #[tauri::command]
-pub async fn scan_devices(app: AppHandle, subnet_base: String) -> Result<(), String> {
-    use crate::network::scan::ScanEvent;
+pub async fn scan_devices(
+    app: AppHandle,
+    adapter_ip: String,
+    subnet_mask: Option<String>,
+    target: Option<String>,
+) -> Result<(), String> {
+    use crate::network::scan::{self, ScanEvent};
+    // Een ongeldig subnet meteen terugmelden, vóór de scan start.
+    let plan = scan::plan(&adapter_ip, subnet_mask.as_deref(), target.as_deref())?;
     tokio::task::spawn_blocking(move || {
         let emitter = app.clone();
-        // Gevonden apparaten → "scan-device"; voortgang van de sweep → "scan-progress".
-        let result = crate::network::scan::scan_devices(&subnet_base, move |ev| match ev {
+        // Gevonden apparaten → "scan-device"; voortgang → "scan-progress"; iets waardoor
+        // de scan minder vindt → "scan-warning" (een code die de UI vertaalt).
+        let result = scan::scan_devices(plan, move |ev| match ev {
             ScanEvent::Device(device) => {
                 let _ = emitter.emit("scan-device", device);
             }
             ScanEvent::Progress { done, total } => {
                 let _ = emitter.emit("scan-progress", (done, total));
+            }
+            ScanEvent::Warning(code) => {
+                let _ = emitter.emit("scan-warning", code);
             }
         });
         // Sein einde-scan (ook bij fout), zodat de UI de status kan afronden.

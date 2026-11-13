@@ -7,11 +7,12 @@ import { t } from "../lib/i18n";
 const HISTORY = 60;
 
 export default function PingTab() {
-  const settings = useStore((s) => s.settings);
-  const setSettings = useStore((s) => s.setSettings);
+  const currentIp = useStore((s) => s.status?.adapter?.current_ip ?? null);
   const pingRequest = useStore((s) => s.pingRequest);
   const clearPingRequest = useStore((s) => s.clearPingRequest);
-  const [target, setTarget] = useState(settings?.ping.target ?? "1.1.1.1");
+  // Start with the subnet of the active adapter ("192.168.62."), so checking
+  // whether an address is free only needs the last number.
+  const [target, setTarget] = useState(subnetPrefix(currentIp));
   const [running, setRunning] = useState(false);
   const [results, setResults] = useState<PingResult[]>([]);
   const unlistenRef = useRef<UnlistenFn | null>(null);
@@ -31,14 +32,15 @@ export default function PingTab() {
     };
   }, []);
 
+  // The adapter status can arrive after this tab opened: fill the prefix then.
+  useEffect(() => {
+    if (!target) setTarget(subnetPrefix(currentIp));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentIp]);
+
   const startTarget = async (ip: string) => {
     const tgt = ip.trim();
     if (!tgt) return;
-    if (settings) {
-      const next = { ...settings, ping: { target: tgt } };
-      setSettings(next);
-      await ipc.saveSettings(next).catch(console.error);
-    }
     await ipc.pingStop().catch(() => {});
     await ipc.pingStart(tgt).catch(() => {});
     setRunning(true);
@@ -72,7 +74,7 @@ export default function PingTab() {
             type="text"
             className="input mono"
             value={target}
-            placeholder="1.1.1.1"
+            placeholder="192.168.1.10"
             onChange={(e) => setTarget(e.target.value)}
             disabled={running}
           />
@@ -92,9 +94,15 @@ export default function PingTab() {
         <Stat label={t("ping.loss")} val={`${stats.loss.toFixed(0)}%`} />
       </div>
 
-      <Sparkline results={results} />
+      <Sparkline results={results} running={running} />
     </section>
   );
+}
+
+/** "192.168.62.15" -> "192.168.62."; empty when there is no IPv4 address. */
+function subnetPrefix(ip: string | null): string {
+  const parts = ip?.split(".") ?? [];
+  return parts.length === 4 ? parts.slice(0, 3).join(".") + "." : "";
 }
 
 function Stat({ label, val }: { label: string; val: string }) {
@@ -128,11 +136,11 @@ function computeStats(results: PingResult[]) {
   };
 }
 
-function Sparkline({ results }: { results: PingResult[] }) {
+function Sparkline({ results, running }: { results: PingResult[]; running: boolean }) {
   if (results.length < 2) {
     return (
       <div className="sparkline">
-        <span className="hint">{t("ping.waiting")}</span>
+        <span className="hint">{t(running ? "ping.waiting" : "ping.idle")}</span>
       </div>
     );
   }

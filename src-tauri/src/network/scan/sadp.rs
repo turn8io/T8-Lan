@@ -7,7 +7,7 @@
 //!
 //! Bewust "rustig": geen sweep, geen poort-bruteforce — één broadcast + luisteren.
 
-use super::DeviceInfo;
+use super::{rank, DeviceInfo};
 use socket2::{Domain, Protocol, Socket, Type};
 use std::net::{Ipv4Addr, SocketAddr, SocketAddrV4, UdpSocket};
 use std::time::{Duration, Instant};
@@ -34,16 +34,13 @@ fn inquiry() -> String {
 /// Voer een SADP-discovery uit op de adapter met IP `iface` en roep `on_device` aan voor
 /// elk gevonden Hikvision-apparaat. Luistert `listen` lang naar antwoorden.
 ///
-/// Faalt stil (geen panic, geen fout) als poort 37020 bezet is of multicast geblokkeerd —
-/// de rest van de scan loopt dan gewoon door.
-pub fn discover<F>(iface: Ipv4Addr, listen: Duration, on_device: F)
+/// Geeft een fout terug als poort 37020 bezet is of de multicast-join mislukt; de
+/// aanroeper meldt dat aan de monteur, de rest van de scan loopt gewoon door.
+pub fn discover<F>(iface: Ipv4Addr, listen: Duration, on_device: F) -> std::io::Result<()>
 where
     F: Fn(DeviceInfo),
 {
-    let socket = match bind_socket(iface) {
-        Some(s) => s,
-        None => return,
-    };
+    let socket = bind_socket(iface)?;
 
     let dest: SocketAddr = SocketAddrV4::new(SADP_GROUP, SADP_PORT).into();
     let _ = socket.set_read_timeout(Some(Duration::from_millis(400)));
@@ -78,19 +75,20 @@ where
             }
         }
     }
+    Ok(())
 }
 
 /// Bind op 0.0.0.0:37020 (vereist om multicast te ontvangen), join de SADP-groep en kies
 /// expliciet de scan-adapter als multicast-interface.
-fn bind_socket(iface: Ipv4Addr) -> Option<UdpSocket> {
-    let socket = Socket::new(Domain::IPV4, Type::DGRAM, Some(Protocol::UDP)).ok()?;
-    socket.set_reuse_address(true).ok()?;
+fn bind_socket(iface: Ipv4Addr) -> std::io::Result<UdpSocket> {
+    let socket = Socket::new(Domain::IPV4, Type::DGRAM, Some(Protocol::UDP))?;
+    socket.set_reuse_address(true)?;
     let bind_addr: SocketAddr = SocketAddrV4::new(Ipv4Addr::UNSPECIFIED, SADP_PORT).into();
-    socket.bind(&bind_addr.into()).ok()?;
-    socket.join_multicast_v4(&SADP_GROUP, &iface).ok()?;
+    socket.bind(&bind_addr.into())?;
+    socket.join_multicast_v4(&SADP_GROUP, &iface)?;
     let _ = socket.set_multicast_if_v4(&iface);
     let _ = socket.set_multicast_loop_v4(false);
-    Some(socket.into())
+    Ok(socket.into())
 }
 
 /// Parse een SADP-`ProbeMatch` naar `(ontdubbelsleutel, DeviceInfo)`. `None` voor alles
@@ -105,11 +103,6 @@ fn parse_probe_match(xml: &str) -> Option<(String, DeviceInfo)> {
         .map(|m| m.to_lowercase().replace('-', ":"))
         .filter(|m| !m.is_empty());
     let key = mac.clone().unwrap_or_else(|| ip.clone());
-
-    let brand = match model_from(xml) {
-        Some(model) => format!("Hikvision {model}"),
-        None => "Hikvision".to_string(),
-    };
 
     // Derde regel: firmware, generatie (v3.1 herken je aan Encrypt=true of SADPVersion
     // die met 3 begint) en of het apparaat nog geactiveerd moet worden. Precies wat een
@@ -142,7 +135,9 @@ fn parse_probe_match(xml: &str) -> Option<(String, DeviceInfo)> {
         key,
         DeviceInfo {
             ip,
-            brand: Some(brand),
+            brand: Some("Hikvision".to_string()),
+            model: model_from(xml),
+            rank: rank::SADP,
             is_camera: true,
             detail,
             web_url,
@@ -211,7 +206,9 @@ mod tests {
         let (key, dev) = parse_probe_match(SAMPLE).expect("moet parsen");
         assert_eq!(key, "50:e5:38:d9:1e:cb");
         assert_eq!(dev.ip, "192.168.1.64");
-        assert_eq!(dev.brand.as_deref(), Some("Hikvision DS-2CD2143G0-I"));
+        assert_eq!(dev.brand.as_deref(), Some("Hikvision"));
+        assert_eq!(dev.model.as_deref(), Some("DS-2CD2143G0-I"));
+        assert_eq!(dev.rank, rank::SADP);
         assert!(dev.is_camera);
         assert_eq!(dev.web_url.as_deref(), Some("http://192.168.1.64"));
         assert_eq!(dev.detail.as_deref(), Some("V5.5.160 · SADP v3.0 · not activated"));
@@ -221,7 +218,7 @@ mod tests {
     fn parses_v31_device_model_from_serial_and_falls_back_to_ip_key() {
         let (key, dev) = parse_probe_match(V31).unwrap();
         assert_eq!(key, "192.168.62.227");
-        assert_eq!(dev.brand.as_deref(), Some("Hikvision iDS-2CD7547G2/P-XZHSY"));
+        assert_eq!(dev.model.as_deref(), Some("iDS-2CD7547G2/P-XZHSY"));
         assert_eq!(dev.web_url.as_deref(), Some("http://192.168.62.227:8080"));
         assert_eq!(dev.detail.as_deref(), Some("SADP v3.1"));
     }

@@ -29,6 +29,20 @@ pub fn set_dhcp(adapter: &str) -> Result<(), String> {
     netsh::run(&["interface", "ipv4", "set", "address", &name, "source=dhcp"])
 }
 
+/// Zonder DHCP-server blijft `ipconfig /renew` ruim drie minuten hangen (gemeten: 219 s).
+/// Een server die er is antwoordt binnen enkele seconden.
+const RENEW_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(12);
+
+/// Vraag opnieuw een DHCP-lease aan (`ipconfig /renew`) voor een kaart die op een
+/// 169.254-noodadres staat. Windows probeert zelf pas na minuten opnieuw; de monteur die
+/// net een kabel heeft ingestoken wil dat nu.
+pub fn renew_dhcp(adapter: &str) -> Result<(), String> {
+    match netsh::run_with_timeout("ipconfig", &["/renew", adapter], RENEW_TIMEOUT)? {
+        true => Ok(()),
+        false => Err("Geen antwoord van een DHCP-server".into()),
+    }
+}
+
 /// Zet `ip` statisch op `adapter`, maar maak het adres eerst vrij als een slapende adapter
 /// het nog vasthoudt. Windows bewaart de IP-configuratie van een virtuele hotspot-adapter
 /// ook nadat die verdwenen is; na een crash of hard afsluiten staat het server-IP dan nog
@@ -47,7 +61,10 @@ pub fn claim_static_no_gateway(adapter: &str, ip: &str, subnet: &str) -> Result<
     set_static_no_gateway(adapter, ip, subnet)
 }
 
-pub fn check_ip_conflict(ip: &str, _timeout_ms: u32) -> Result<Option<String>, String> {
+/// Vraag via ARP het MAC-adres bij `ip` op; `None` als niemand antwoordt. Met `src` (het
+/// IP van een adapter) gaat de ARP via die adapter; zonder `src` kiest Windows er zelf een,
+/// en dat is op een pc met meerdere kaarten niet altijd de gekozen kaart.
+pub fn check_ip_conflict(ip: &str, src: Option<std::net::Ipv4Addr>) -> Result<Option<String>, String> {
     use std::net::Ipv4Addr;
     use windows::Win32::NetworkManagement::IpHelper::SendARP;
 
@@ -62,7 +79,7 @@ pub fn check_ip_conflict(ip: &str, _timeout_ms: u32) -> Result<Option<String>, S
     let result = unsafe {
         SendARP(
             dest_ip,
-            0,
+            src.map_or(0, |a| u32::from_le_bytes(a.octets())),
             mac_buf.as_mut_ptr() as *mut _,
             &mut mac_len,
         )

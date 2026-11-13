@@ -1105,6 +1105,36 @@ textarea {
   gap: 4px;
 }
 
+/* Probleemtoestand van de statuskaart: geen link of DHCP zonder server. Rood, met een
+   duidelijke kop in plaats van waarden, zodat een 169.254-noodadres nooit voor een echt
+   IP wordt aangezien. */
+.status-card--problem {
+  border-color: var(--err);
+}
+.status-problem {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.status-problem__title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--err);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+.status-problem__text {
+  font-size: 11px;
+  line-height: 1.4;
+}
+.status-problem__note {
+  font-size: 10px;
+  color: var(--fg-muted);
+}
+.status-problem > .btn {
+  margin-top: 4px;
+}
+
 /* fading content wrapper: out in 0.5s while switching, in 0.2s when done */
 .status-card__body {
   display: flex;
@@ -1375,6 +1405,64 @@ textarea {
 }
 
 /* Knoptekst vet, in dezelfde uppercase/letter-spacing als de veld-labels. */
+/* Scanknop met een driehoekje rechts: daarmee kies je het bereik van de scan. */
+.scan-split {
+  display: flex;
+  gap: 1px;
+}
+.scan-split > .network-scan-btn {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+.scan-split__caret {
+  flex: 0 0 26px;
+  padding-left: 0;
+  padding-right: 0;
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+.scan-range {
+  display: block;
+  margin-top: 3px;
+  font-size: 10px;
+  color: var(--fg-muted);
+  text-align: center;
+}
+.scan-menu {
+  margin-top: 4px;
+  padding: 3px;
+  background: #1b1b20;
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.scan-menu .cselect__opt.is-selected {
+  color: var(--t8-yellow);
+}
+.scan-menu__row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.scan-menu__row > .cselect__opt,
+.scan-menu__row > .input {
+  flex: 1;
+  min-width: 0;
+}
+.scan-menu__row > .input {
+  font-size: 10.5px;
+  padding: 4px 6px;
+}
+.scan-menu__remove {
+  flex: 0 0 20px;
+  font-size: 13px;
+  color: var(--fg-muted);
+}
+.scan-menu__remove:hover {
+  color: var(--err);
+}
 .network-scan-btn {
   text-transform: uppercase;
   letter-spacing: 0.4px;

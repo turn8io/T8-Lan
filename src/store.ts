@@ -33,6 +33,10 @@ type State = {
   scanDevices: DeviceInfo[];
   scanDone: boolean;
   scanPct: number;
+  /** Codes van de backend voor wat de scan minder laat vinden ("sadp", "firewall", "routed"). */
+  scanWarnings: string[];
+  /** Door de monteur opgegeven subnet; leeg = het eigen subnet van de adapter. */
+  scanTarget: string;
   dhcpStatus: DhcpStatus | null;
   confirmReq: ConfirmRequest;
   setSettings: (s: Settings) => void;
@@ -45,6 +49,8 @@ type State = {
   setScanDevices: (updater: DeviceInfo[] | ((prev: DeviceInfo[]) => DeviceInfo[])) => void;
   setScanDone: (v: boolean) => void;
   setScanPct: (v: number) => void;
+  addScanWarning: (code: string) => void;
+  setScanTarget: (target: string) => void;
   resetScan: () => void;
   setDhcpStatus: (s: DhcpStatus | null) => void;
   setConfirmReq: (r: ConfirmRequest) => void;
@@ -61,6 +67,8 @@ export const useStore = create<State>((set) => ({
   scanDevices: [],
   scanDone: false,
   scanPct: 0,
+  scanWarnings: [],
+  scanTarget: "",
   dhcpStatus: null,
   confirmReq: null,
   setSettings: (settings) => set({ settings }),
@@ -76,7 +84,10 @@ export const useStore = create<State>((set) => ({
     })),
   setScanDone: (scanDone) => set({ scanDone }),
   setScanPct: (scanPct) => set({ scanPct }),
-  resetScan: () => set({ scanDevices: [], scanDone: false, scanPct: 0 }),
+  addScanWarning: (code) =>
+    set((s) => (s.scanWarnings.includes(code) ? s : { scanWarnings: [...s.scanWarnings, code] })),
+  setScanTarget: (scanTarget) => set({ scanTarget }),
+  resetScan: () => set({ scanDevices: [], scanDone: false, scanPct: 0, scanWarnings: [] }),
   setDhcpStatus: (dhcpStatus) => set({ dhcpStatus }),
   setConfirmReq: (confirmReq) => set({ confirmReq }),
 }));
